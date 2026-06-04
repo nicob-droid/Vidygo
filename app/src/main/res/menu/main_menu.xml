@@ -9,5 +9,12 @@
         android:icon="@android:drawable/ic_menu_sort_by_size"
         app:showAsAction="ifRoom" />
 
+    <item
+        android:id="@+id/action_settings"
+        android:title="@string/settings_title"
+        android:orderInCategory="200"
+        android:icon="@android:drawable/ic_menu_preferences"
+        app:showAsAction="never" />
+
 </menu>
 
