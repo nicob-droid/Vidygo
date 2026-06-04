@@ -23,9 +23,15 @@
     <string name="empty_playlist">Sans playlist</string>
     <string name="add_video_description">Remplissez tous les champs pour ajouter votre vidéo préférée</string>
     <string name="cancel">Annuler</string>
+    <string name="apply">Appliquer</string>
     <string name="save">Enregistrer</string>
     <string name="video_added_from_share">Vidéo ajoutée depuis le partage</string>
     <string name="share_no_youtube_link">Aucun lien YouTube détecté</string>
     <string name="unknown_channel">Chaîne inconnue</string>
     <string name="shared_video_default_title">Vidéo YouTube</string>
+    <string name="sort_dialog_title">Trier les vidéos</string>
+    <string name="sort_date_desc">Date d\'ajout (plus récent)</string>
+    <string name="sort_date_asc">Date d\'ajout (plus ancien)</string>
+    <string name="sort_alpha_asc">Ordre alphabétique (A-Z)</string>
+    <string name="sort_alpha_desc">Ordre alphabétique (Z-A)</string>
 </resources>

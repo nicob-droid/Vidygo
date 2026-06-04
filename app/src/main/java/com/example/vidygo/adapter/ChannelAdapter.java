@@ -19,6 +19,7 @@ import com.example.vidygo.model.Video;
 import com.example.vidygo.util.YouTubeMetadataUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -113,6 +114,9 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
             String sampleVideoUrl = vids.get(0).getVideoUrl();
             result.add(new ChannelItem(entry.getKey(), vids.size(), thumb, sampleVideoUrl));
         }
+        // Tri alphabétique (insensible à la casse)
+        Collections.sort(result, (a, b) ->
+                a.getName().compareToIgnoreCase(b.getName()));
         return result;
     }
 
