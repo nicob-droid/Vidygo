@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     private VideoAdapter videoAdapter;
     private SectionedVideoAdapter sectionedVideoAdapter;
     private ChannelAdapter channelAdapter;
+    private ChannelAdapter playlistAdapter;
     private RecyclerView.Adapter<?> currentAdapter;
     private List<Video> videoList;
     private LinearLayout emptyState;
@@ -129,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     }
 
     private void refreshList() {
-        if (videoAdapter == null || sectionedVideoAdapter == null || channelAdapter == null) {
+        if (videoAdapter == null || channelAdapter == null || playlistAdapter == null) {
             return;
         }
 
@@ -140,9 +141,9 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             currentAdapter = channelAdapter;
             videosRecyclerView.setLayoutManager(gridLayoutManager);
         } else if ("playlists".equals(currentMode)) {
-            sectionedVideoAdapter.rebuild(source, currentMode);
-            currentAdapter = sectionedVideoAdapter;
-            videosRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+            playlistAdapter.rebuild(source);
+            currentAdapter = playlistAdapter;
+            videosRecyclerView.setLayoutManager(gridLayoutManager);
         } else {
             sortVideosForAllMode(source);
             videoAdapter.updateVideos(source);
@@ -185,9 +186,14 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         gridLayoutManager = new GridLayoutManager(this, 3);
         videoAdapter = new VideoAdapter(videoList, this);
         sectionedVideoAdapter = new SectionedVideoAdapter(videoList, currentMode, this);
-        channelAdapter = new ChannelAdapter(videoList, channel -> {
+        channelAdapter = new ChannelAdapter(videoList, ChannelAdapter.Mode.CHANNELS, channel -> {
             Intent intent = new Intent(this, ChannelVideosActivity.class);
             intent.putExtra(ChannelVideosActivity.EXTRA_CHANNEL_NAME, channel.getName());
+            startActivity(intent);
+        });
+        playlistAdapter = new ChannelAdapter(videoList, ChannelAdapter.Mode.PLAYLISTS, playlist -> {
+            Intent intent = new Intent(this, ChannelVideosActivity.class);
+            intent.putExtra(ChannelVideosActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
             startActivity(intent);
         });
         currentAdapter = videoAdapter;

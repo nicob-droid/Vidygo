@@ -23,11 +23,13 @@ import java.util.List;
 public class ChannelVideosActivity extends AppCompatActivity implements VideoAdapter.OnVideoActionListener {
 
     public static final String EXTRA_CHANNEL_NAME = "channel_name";
+    public static final String EXTRA_PLAYLIST_NAME = "playlist_name";
 
     private VideoPreferenceManager videoPreferenceManager;
     private VideoAdapter videoAdapter;
     private List<Video> videoList;
     private String channelName;
+    private String playlistName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,17 +37,19 @@ public class ChannelVideosActivity extends AppCompatActivity implements VideoAda
         setContentView(R.layout.activity_channel_videos);
 
         channelName = getIntent().getStringExtra(EXTRA_CHANNEL_NAME);
+        playlistName = getIntent().getStringExtra(EXTRA_PLAYLIST_NAME);
         videoPreferenceManager = new VideoPreferenceManager(this);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(channelName != null ? channelName : "Chaîne");
+            String title = channelName != null ? channelName : (playlistName != null ? playlistName : "Vidéos");
+            getSupportActionBar().setTitle(title);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        videoList = filterByChannel(videoPreferenceManager.getVideos());
+        videoList = filterVideos(videoPreferenceManager.getVideos());
         videoAdapter = new VideoAdapter(videoList, this);
 
         RecyclerView recyclerView = findViewById(R.id.channel_videos_recycler_view);
@@ -56,17 +60,34 @@ public class ChannelVideosActivity extends AppCompatActivity implements VideoAda
     @Override
     protected void onResume() {
         super.onResume();
-        videoList = filterByChannel(videoPreferenceManager.getVideos());
+        videoList = filterVideos(videoPreferenceManager.getVideos());
         if (videoAdapter != null) {
             videoAdapter.updateVideos(videoList);
         }
     }
 
-    private List<Video> filterByChannel(List<Video> all) {
+    private List<Video> filterVideos(List<Video> all) {
         List<Video> result = new ArrayList<>();
         for (Video video : all) {
-            String ch = video.getChannel();
-            if (channelName == null ? ch == null : channelName.equals(ch)) {
+            if (channelName != null) {
+                String ch = video.getChannel();
+                String normalized = ch == null ? "" : ch.trim();
+                if (channelName.trim().equals(normalized)) {
+                    result.add(video);
+                }
+                continue;
+            }
+
+            if (playlistName != null) {
+                String playlist = video.getPlaylistName();
+                String normalized = playlist == null ? "" : playlist.trim();
+                if (playlistName.trim().equals(normalized)) {
+                    result.add(video);
+                }
+                continue;
+            }
+
+            if (channelName == null && playlistName == null) {
                 result.add(video);
             }
         }

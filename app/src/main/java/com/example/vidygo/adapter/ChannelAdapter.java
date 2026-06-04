@@ -34,6 +34,11 @@ import java.util.concurrent.Executors;
  */
 public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelViewHolder> {
 
+    public enum Mode {
+        CHANNELS,
+        PLAYLISTS
+    }
+
     private static final String CACHE_LOADING = "__loading__";
     private static final String CACHE_NONE = "__none__";
 
@@ -49,17 +54,23 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
 
     private final List<ChannelItem> channels;
     private final OnChannelClickListener listener;
+    private final Mode mode;
 
-    public ChannelAdapter(List<Video> videos, OnChannelClickListener listener) {
+    public ChannelAdapter(List<Video> videos, Mode mode, OnChannelClickListener listener) {
         this.listener = listener;
+        this.mode = mode;
         this.channels = buildChannels(videos);
-        prefetchMissingAvatars();
+        if (this.mode == Mode.CHANNELS) {
+            prefetchMissingAvatars();
+        }
     }
 
     public void rebuild(List<Video> videos) {
         channels.clear();
         channels.addAll(buildChannels(videos));
-        prefetchMissingAvatars();
+        if (mode == Mode.CHANNELS) {
+            prefetchMissingAvatars();
+        }
         notifyDataSetChanged();
     }
 
@@ -102,15 +113,23 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
     private List<ChannelItem> buildChannels(List<Video> videos) {
         Map<String, List<Video>> grouped = new LinkedHashMap<>();
         for (Video video : videos) {
-            String key = TextUtils.isEmpty(video.getChannel()) ? "Chaîne inconnue" : video.getChannel().trim();
+            String key;
+            if (mode == Mode.PLAYLISTS) {
+                String rawPlaylist = video.getPlaylistName();
+                if (TextUtils.isEmpty(rawPlaylist) || rawPlaylist.trim().isEmpty()) {
+                    continue;
+                }
+                key = rawPlaylist.trim();
+            } else {
+                key = TextUtils.isEmpty(video.getChannel()) ? "Chaîne inconnue" : video.getChannel().trim();
+            }
             grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(video);
         }
 
         List<ChannelItem> result = new ArrayList<>();
         for (Map.Entry<String, List<Video>> entry : grouped.entrySet()) {
             List<Video> vids = entry.getValue();
-            // Avatar réel si déjà présent dans une vidéo, sinon miniature en fallback
-            String thumb = findChannelAvatar(vids);
+            String thumb = mode == Mode.CHANNELS ? findChannelAvatar(vids) : findBestThumbnail(vids);
             String sampleVideoUrl = vids.get(0).getVideoUrl();
             result.add(new ChannelItem(entry.getKey(), vids.size(), thumb, sampleVideoUrl));
         }
@@ -173,7 +192,7 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
 
     @Override
     public void onBindViewHolder(@NonNull ChannelViewHolder holder, int position) {
-        holder.bind(channels.get(position), listener, executor, mainHandler);
+        holder.bind(channels.get(position), mode, listener, executor, mainHandler);
     }
 
     @Override
@@ -193,7 +212,7 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
             count = itemView.findViewById(R.id.channel_count);
         }
 
-        void bind(ChannelItem channel, OnChannelClickListener listener,
+        void bind(ChannelItem channel, Mode mode, OnChannelClickListener listener,
                   ExecutorService executor, Handler mainHandler) {
             name.setText(channel.getName());
             int n = channel.getVideoCount();
@@ -201,6 +220,14 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
 
             // Tag pour détecter les vues recyclées
             thumbnail.setTag(channel.getName());
+
+            if (mode == Mode.PLAYLISTS) {
+                loadCircular(channel.getThumbnailUrl());
+                itemView.setOnClickListener(v -> {
+                    if (listener != null) listener.onChannelClick(channel);
+                });
+                return;
+            }
 
             // Vérifie le cache d'abord
             String cached = avatarCache.get(channel.getName());
