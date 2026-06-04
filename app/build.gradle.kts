@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.recyclerview)
     implementation(libs.glide)
     implementation(libs.preference)
+    implementation(libs.core.splashscreen)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
