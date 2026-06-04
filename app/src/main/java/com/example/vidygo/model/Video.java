@@ -9,7 +9,7 @@ public class Video {
     private final String id;
     private final String title;
     private final String channel;
-    private final String playlistName;
+    private String playlistName;
     private final String thumbnailUrl;
     private final String videoUrl;
     private final String channelAvatarUrl;
@@ -45,6 +45,10 @@ public class Video {
 
     public void setDateAdded(long dateAdded) {
         this.dateAdded = dateAdded;
+    }
+
+    public void setPlaylistName(String playlistName) {
+        this.playlistName = playlistName == null ? "" : playlistName.trim();
     }
 
     @Override

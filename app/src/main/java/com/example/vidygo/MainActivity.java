@@ -4,13 +4,16 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 import android.widget.LinearLayout;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -47,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     private List<Video> videoList;
     private LinearLayout emptyState;
     private FloatingActionButton fabAddVideo;
+    private FloatingActionButton fabAddPlaylist;
     private VideoPreferenceManager videoPreferenceManager;
     private String currentMode = "all";
     private Chip chipAll;
@@ -93,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         videosRecyclerView = findViewById(R.id.videos_recycler_view);
         emptyState = findViewById(R.id.empty_state);
         fabAddVideo = findViewById(R.id.fab_add_video);
+        fabAddPlaylist = findViewById(R.id.fab_add_playlist);
         chipAll = findViewById(R.id.chip_all);
         chipChannels = findViewById(R.id.chip_channels);
         chipPlaylists = findViewById(R.id.chip_playlists);
@@ -141,6 +146,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             currentAdapter = channelAdapter;
             videosRecyclerView.setLayoutManager(gridLayoutManager);
         } else if ("playlists".equals(currentMode)) {
+            playlistAdapter.setExplicitPlaylistNames(videoPreferenceManager.getPlaylistNames());
             playlistAdapter.rebuild(source);
             currentAdapter = playlistAdapter;
             videosRecyclerView.setLayoutManager(gridLayoutManager);
@@ -196,6 +202,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             intent.putExtra(ChannelVideosActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
             startActivity(intent);
         });
+        playlistAdapter.setExplicitPlaylistNames(videoPreferenceManager.getPlaylistNames());
         currentAdapter = videoAdapter;
         videosRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         videosRecyclerView.setAdapter(currentAdapter);
@@ -211,13 +218,18 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             Intent intent = new Intent(this, AddVideoActivity.class);
             startActivity(intent);
         });
+
+        fabAddPlaylist.setOnClickListener(v -> showCreatePlaylistDialog());
     }
 
     /**
      * Affiche ou masque l'état vide selon le nombre de vidéos.
      */
     private void updateEmptyState() {
-        if (videoList.isEmpty()) {
+        boolean showEmpty = "all".equals(currentMode)
+                ? videoList.isEmpty()
+                : (currentAdapter == null || currentAdapter.getItemCount() == 0);
+        if (showEmpty) {
             emptyState.setVisibility(android.view.View.VISIBLE);
             videosRecyclerView.setVisibility(android.view.View.GONE);
         } else {
@@ -261,6 +273,88 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         shareIntent.putExtra(Intent.EXTRA_TEXT,
                 "Regarde cette vidéo : " + video.getTitle() + "\n" + video.getVideoUrl());
         startActivity(Intent.createChooser(shareIntent, "Partager la vidéo"));
+    }
+
+    @Override
+    public void onVideoAddToPlaylist(Video video) {
+        showAssignPlaylistDialog(video);
+    }
+
+    private void showCreatePlaylistDialog() {
+        EditText input = new EditText(this);
+        input.setHint(R.string.playlist_name_hint);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        input.setPadding(pad, pad, pad, pad);
+
+        AlertDialog createDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.create_playlist)
+                .setView(input)
+                .setPositiveButton(R.string.create, (dialog, which) -> {
+                    String playlistName = input.getText() == null ? "" : input.getText().toString().trim();
+                    if (TextUtils.isEmpty(playlistName)) {
+                        Toast.makeText(this, R.string.playlist_name_required, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (hasPlaylistName(playlistName)) {
+                        Toast.makeText(this, R.string.playlist_already_exists, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    videoPreferenceManager.savePlaylist(playlistName);
+                    chipPlaylists.setChecked(true);
+                    setMode("playlists");
+                    Toast.makeText(this, R.string.playlist_created, Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        createDialog.show();
+        styleDialogButtons(createDialog);
+    }
+
+    private void showAssignPlaylistDialog(Video video) {
+        List<String> playlists = videoPreferenceManager.getPlaylistNames();
+        if (playlists.isEmpty()) {
+            Toast.makeText(this, R.string.no_playlist_yet, Toast.LENGTH_SHORT).show();
+            showCreatePlaylistDialog();
+            return;
+        }
+
+        String[] options = playlists.toArray(new String[0]);
+        AlertDialog assignDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.add_to_playlist)
+                .setItems(options, (dialog, which) -> {
+                    String selected = options[which];
+                    videoPreferenceManager.updateVideoPlaylist(video.getId(), selected);
+                    refreshStoredVideoList();
+                    Toast.makeText(this, getString(R.string.video_added_to_playlist, selected), Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        assignDialog.show();
+        styleDialogButtons(assignDialog);
+    }
+
+    private boolean hasPlaylistName(String playlistName) {
+        for (String existing : videoPreferenceManager.getPlaylistNames()) {
+            if (playlistName.equalsIgnoreCase(existing)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void styleDialogButtons(AlertDialog dialog) {
+        int color = ContextCompat.getColor(this, R.color.purple_700);
+        if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(color);
+        }
+        if (dialog.getButton(AlertDialog.BUTTON_NEGATIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(color);
+        }
+    }
+
+    private void refreshStoredVideoList() {
+        videoList = new ArrayList<>(videoPreferenceManager.getVideos());
+        refreshList();
     }
 
     @Override

@@ -36,6 +36,7 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHol
         void onVideoClick(Video video);
         void onVideoDelete(Video video);
         void onVideoShare(Video video);
+        void onVideoAddToPlaylist(Video video);
     }
 
     public VideoAdapter(List<Video> videos, OnVideoActionListener listener) {
@@ -76,6 +77,7 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHol
         private final TextView channelTextView;
         private final ImageButton deleteButton;
         private final ImageButton shareButton;
+        private final ImageButton addToPlaylistButton;
 
         public VideoViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -84,6 +86,7 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHol
             channelTextView = itemView.findViewById(R.id.video_channel);
             deleteButton = itemView.findViewById(R.id.btn_delete);
             shareButton = itemView.findViewById(R.id.btn_share);
+            addToPlaylistButton = itemView.findViewById(R.id.btn_add_to_playlist);
         }
 
         public void bind(Video video, OnVideoActionListener listener) {
@@ -116,6 +119,12 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHol
             shareButton.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onVideoShare(video);
+                }
+            });
+
+            addToPlaylistButton.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onVideoAddToPlaylist(video);
                 }
             });
         }

@@ -50,5 +50,14 @@
     <string name="settings_privacy_content">Vidygo stores your saved videos locally on your device. No personal data is sold or shared for commercial purposes.</string>
     <string name="settings_about">About the app</string>
     <string name="settings_about_content">Version: %1$s\nBuild: %2$d</string>
+    <string name="create_playlist">Create playlist</string>
+    <string name="create">Create</string>
+    <string name="playlist_name_hint">Playlist name</string>
+    <string name="playlist_name_required">Playlist name is required</string>
+    <string name="no_playlist_yet">No existing playlist</string>
+    <string name="add_to_playlist">Add to playlist</string>
+    <string name="video_added_to_playlist">Video added to playlist %1$s</string>
+    <string name="playlist_created">Playlist created</string>
+    <string name="playlist_already_exists">This playlist already exists</string>
 </resources>
 

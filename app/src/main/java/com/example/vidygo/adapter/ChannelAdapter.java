@@ -55,6 +55,7 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
     private final List<ChannelItem> channels;
     private final OnChannelClickListener listener;
     private final Mode mode;
+    private List<String> explicitPlaylistNames = Collections.emptyList();
 
     public ChannelAdapter(List<Video> videos, Mode mode, OnChannelClickListener listener) {
         this.listener = listener;
@@ -72,6 +73,14 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
             prefetchMissingAvatars();
         }
         notifyDataSetChanged();
+    }
+
+    public void setExplicitPlaylistNames(List<String> playlistNames) {
+        if (playlistNames == null || playlistNames.isEmpty()) {
+            this.explicitPlaylistNames = Collections.emptyList();
+        } else {
+            this.explicitPlaylistNames = new ArrayList<>(playlistNames);
+        }
     }
 
     private void prefetchMissingAvatars() {
@@ -112,6 +121,13 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
 
     private List<ChannelItem> buildChannels(List<Video> videos) {
         Map<String, List<Video>> grouped = new LinkedHashMap<>();
+        if (mode == Mode.PLAYLISTS) {
+            for (String playlist : explicitPlaylistNames) {
+                if (!TextUtils.isEmpty(playlist) && !playlist.trim().isEmpty()) {
+                    grouped.put(playlist.trim(), new ArrayList<>());
+                }
+            }
+        }
         for (Video video : videos) {
             String key;
             if (mode == Mode.PLAYLISTS) {
@@ -129,8 +145,10 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
         List<ChannelItem> result = new ArrayList<>();
         for (Map.Entry<String, List<Video>> entry : grouped.entrySet()) {
             List<Video> vids = entry.getValue();
-            String thumb = mode == Mode.CHANNELS ? findChannelAvatar(vids) : findBestThumbnail(vids);
-            String sampleVideoUrl = vids.get(0).getVideoUrl();
+            String thumb = vids.isEmpty()
+                    ? null
+                    : (mode == Mode.CHANNELS ? findChannelAvatar(vids) : findBestThumbnail(vids));
+            String sampleVideoUrl = vids.isEmpty() ? "" : vids.get(0).getVideoUrl();
             result.add(new ChannelItem(entry.getKey(), vids.size(), thumb, sampleVideoUrl));
         }
         // Tri alphabétique (insensible à la casse)
@@ -222,7 +240,7 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
             thumbnail.setTag(channel.getName());
 
             if (mode == Mode.PLAYLISTS) {
-                loadCircular(channel.getThumbnailUrl());
+                loadCircular(channel.getThumbnailUrl(), R.drawable.ic_launcher_foreground);
                 itemView.setOnClickListener(v -> {
                     if (listener != null) listener.onChannelClick(channel);
                 });
@@ -236,10 +254,10 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
                     && !CACHE_LOADING.equals(cached)
                     && !CACHE_NONE.equals(cached)) {
                 // Avatar réel en cache → affichage direct
-                loadCircular(cached);
+                loadCircular(cached, R.drawable.channel_avatar_placeholder);
             } else {
                 // Affiche la miniature vidéo en attendant
-                loadCircular(channel.getThumbnailUrl());
+                loadCircular(channel.getThumbnailUrl(), R.drawable.channel_avatar_placeholder);
 
                 // Lance le fetch si pas déjà en cours
                 if (cached == null && !TextUtils.isEmpty(channel.getSampleVideoUrl())) {
@@ -257,7 +275,7 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
                             mainHandler.post(() -> {
                                 // Met à jour seulement si la vue affiche encore cette chaîne
                                 if (channelName.equals(thumbnail.getTag())) {
-                                    loadCircular(finalUrl);
+                                    loadCircular(finalUrl, R.drawable.channel_avatar_placeholder);
                                 }
                             });
                         }
@@ -270,13 +288,13 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
             });
         }
 
-        private void loadCircular(String url) {
+        private void loadCircular(String url, int placeholderRes) {
             Glide.with(itemView).clear(thumbnail);
             Glide.with(itemView)
                     .load(url)
                     .centerCrop()
-                    .placeholder(R.drawable.channel_avatar_placeholder)
-                    .error(R.drawable.channel_avatar_placeholder)
+                    .placeholder(placeholderRes)
+                    .error(placeholderRes)
                     .into(thumbnail);
         }
     }

@@ -10,7 +10,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Classe utilitaire pour gérer la persistance des vidéos.
@@ -21,6 +24,7 @@ public class VideoPreferenceManager {
 
     private static final String SHARED_PREF_NAME = "vidygo_preferences";
     private static final String KEY_VIDEOS = "videos_list";
+    private static final String KEY_PLAYLISTS = "playlists_list";
 
     private final SharedPreferences sharedPreferences;
 
@@ -89,6 +93,9 @@ public class VideoPreferenceManager {
         List<Video> videos = getVideos();
         videos.add(0, video); // Ajouter au début
         saveVideos(videos);
+        if (video.getPlaylistName() != null && !video.getPlaylistName().trim().isEmpty()) {
+            savePlaylist(video.getPlaylistName());
+        }
     }
 
     /**
@@ -101,10 +108,92 @@ public class VideoPreferenceManager {
     }
 
     /**
+     * Met à jour la playlist d'une vidéo existante.
+     */
+    public void updateVideoPlaylist(String videoId, String playlistName) {
+        List<Video> videos = getVideos();
+        for (Video video : videos) {
+            if (video.getId().equals(videoId)) {
+                video.setPlaylistName(playlistName);
+                break;
+            }
+        }
+        saveVideos(videos);
+        if (playlistName != null && !playlistName.trim().isEmpty()) {
+            savePlaylist(playlistName);
+        }
+    }
+
+    /**
+     * Crée une playlist explicite (même sans vidéo).
+     */
+    public void savePlaylist(String playlistName) {
+        String normalized = playlistName == null ? "" : playlistName.trim();
+        if (normalized.isEmpty()) {
+            return;
+        }
+        List<String> playlists = getExplicitPlaylists();
+        for (String existing : playlists) {
+            if (normalized.equalsIgnoreCase(existing)) {
+                return;
+            }
+        }
+        playlists.add(normalized);
+        Collections.sort(playlists, String::compareToIgnoreCase);
+        saveExplicitPlaylists(playlists);
+    }
+
+    /**
+     * Retourne la liste triée des playlists non vides.
+     */
+    public List<String> getPlaylistNames() {
+        Set<String> unique = new LinkedHashSet<>();
+        for (String explicit : getExplicitPlaylists()) {
+            if (explicit != null && !explicit.trim().isEmpty()) {
+                unique.add(explicit.trim());
+            }
+        }
+        for (Video video : getVideos()) {
+            String playlist = video.getPlaylistName();
+            if (playlist != null && !playlist.trim().isEmpty()) {
+                unique.add(playlist.trim());
+            }
+        }
+        List<String> result = new ArrayList<>(unique);
+        Collections.sort(result, String::compareToIgnoreCase);
+        return result;
+    }
+
+    /**
      * Nettoie toutes les vidéos
      */
     public void clearAll() {
-        sharedPreferences.edit().remove(KEY_VIDEOS).apply();
+        sharedPreferences.edit().remove(KEY_VIDEOS).remove(KEY_PLAYLISTS).apply();
+    }
+
+    private List<String> getExplicitPlaylists() {
+        List<String> playlists = new ArrayList<>();
+        String raw = sharedPreferences.getString(KEY_PLAYLISTS, "[]");
+        try {
+            JSONArray array = new JSONArray(raw);
+            for (int i = 0; i < array.length(); i++) {
+                String name = array.optString(i, "").trim();
+                if (!name.isEmpty()) {
+                    playlists.add(name);
+                }
+            }
+        } catch (JSONException e) {
+            Logger.e("Erreur lors du chargement des playlists", e);
+        }
+        return playlists;
+    }
+
+    private void saveExplicitPlaylists(List<String> playlists) {
+        JSONArray array = new JSONArray();
+        for (String playlist : playlists) {
+            array.put(playlist);
+        }
+        sharedPreferences.edit().putString(KEY_PLAYLISTS, array.toString()).apply();
     }
 }
 

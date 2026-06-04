@@ -119,5 +119,17 @@
         app:backgroundTint="@color/purple_500"
         app:tint="@color/white" />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_add_playlist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="92dp"
+        android:layout_marginBottom="20dp"
+        android:contentDescription="@string/create_playlist"
+        android:src="@drawable/ic_playlist_add"
+        app:backgroundTint="@color/teal_700"
+        app:tint="@color/white" />
+
 </FrameLayout>
 

@@ -3,8 +3,10 @@ package com.example.vidygo;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -118,6 +120,31 @@ public class ChannelVideosActivity extends AppCompatActivity implements VideoAda
         shareIntent.putExtra(Intent.EXTRA_TEXT,
                 "Regarde cette vidéo : " + video.getTitle() + "\n" + video.getVideoUrl());
         startActivity(Intent.createChooser(shareIntent, "Partager la vidéo"));
+    }
+
+    @Override
+    public void onVideoAddToPlaylist(Video video) {
+        List<String> playlists = videoPreferenceManager.getPlaylistNames();
+        if (playlists.isEmpty()) {
+            Toast.makeText(this, R.string.no_playlist_yet, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] options = playlists.toArray(new String[0]);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.add_to_playlist)
+                .setItems(options, (dialog, which) -> {
+                    String selected = options[which];
+                    if (TextUtils.isEmpty(selected)) {
+                        return;
+                    }
+                    videoPreferenceManager.updateVideoPlaylist(video.getId(), selected);
+                    videoList = filterVideos(videoPreferenceManager.getVideos());
+                    videoAdapter.updateVideos(videoList);
+                    Toast.makeText(this, getString(R.string.video_added_to_playlist, selected), Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 }
 

@@ -32,6 +32,8 @@ import java.util.regex.Pattern;
  */
 public class AddVideoActivity extends AppCompatActivity {
 
+    public static final String EXTRA_PREFILL_PLAYLIST = "prefill_playlist_name";
+
     private static final Pattern YOUTUBE_URL_PATTERN = Pattern.compile(
             "(https?://(?:www\\.)?(?:youtube\\.com|youtu\\.be)/\\S+)",
             Pattern.CASE_INSENSITIVE
@@ -65,10 +67,18 @@ public class AddVideoActivity extends AppCompatActivity {
 
         // Initialiser les vues
         initializeViews();
+        prefillPlaylistFromIntent();
 
         // Configurer les actions
         setupActions();
         handleIncomingShareIntent(getIntent());
+    }
+
+    private void prefillPlaylistFromIntent() {
+        String prefill = getIntent().getStringExtra(EXTRA_PREFILL_PLAYLIST);
+        if (!TextUtils.isEmpty(prefill) && playlistInput != null) {
+            playlistInput.setText(prefill.trim());
+        }
     }
 
     /**
