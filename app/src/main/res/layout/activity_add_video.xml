@@ -17,9 +17,9 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/purple_500"
+            android:background="@color/appbar_primary"
             app:title="Ajouter une vidéo"
-            app:titleTextColor="@color/white"
+            app:titleTextColor="@color/appbar_text"
             app:navigationIcon="?attr/homeAsUpIndicator" />
 
     </com.google.android.material.appbar.AppBarLayout>

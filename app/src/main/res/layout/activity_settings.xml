@@ -12,7 +12,7 @@
         android:background="?attr/colorPrimary"
         app:navigationIcon="@android:drawable/ic_menu_revert"
         app:title="@string/settings_title"
-        app:titleTextColor="@color/white" />
+        app:titleTextColor="?attr/colorOnPrimary" />
 
     <FrameLayout
         android:id="@+id/settings_container"

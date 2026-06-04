@@ -11,4 +11,7 @@
     <color name="gray_dark">#FF616161</color>
     <color name="youtube_red">#FFFF0000</color>
 	<color name="ic_launcher_background">#5A35FF</color>
+    <!-- Action Bar colors - Modern minimalist design -->
+    <color name="appbar_primary">#FFFAFAFA</color>
+    <color name="appbar_text">#FF1F1F1F</color>
 </resources>

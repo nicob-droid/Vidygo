@@ -77,7 +77,7 @@
                     android:contentDescription="@string/share_video"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_share"
-                    android:tint="?attr/colorOnSurface" />
+                    app:tint="?attr/colorOnSurface" />
 
                 <ImageButton
                     android:id="@+id/btn_delete"
@@ -87,7 +87,7 @@
                     android:contentDescription="@string/delete_video"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_delete"
-                    android:tint="?attr/colorError" />
+                    app:tint="?attr/colorError" />
 
             </LinearLayout>
 
