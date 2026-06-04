@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Vidygo</string>
+    <string name="video_thumbnail">Vignette de la vidéo</string>
+    <string name="share_video">Partager la vidéo</string>
+    <string name="delete_video">Supprimer la vidéo</string>
+    <string name="add_video">Ajouter une vidéo</string>
+    <string name="empty_state_icon">Icône d\'état vide</string>
+    <string name="empty_state_title">Aucune vidéo sauvegardée</string>
+    <string name="empty_state_description">Commencez à ajouter vos vidéos YouTube préférées en cliquant sur le bouton +</string>
+    <string name="add_video_title">Ajouter une nouvelle vidéo YouTube</string>
+    <string name="video_url_hint">Lien YouTube (https://youtube.com/watch?v=…)</string>
+    <string name="video_title_hint">Titre de la vidéo</string>
+    <string name="video_channel_hint">Nom de la chaîne</string>
+    <string name="video_playlist_hint">Nom de la playlist (optionnel)</string>
+    <string name="metadata_loading">Récupération automatique du titre et de la chaîne…</string>
+    <string name="metadata_loaded">Titre et chaîne récupérés automatiquement</string>
+    <string name="metadata_failed">Impossible de récupérer automatiquement le titre et la chaîne</string>
+    <string name="metadata_retry">Réessaie avec un lien YouTube valide</string>
+    <string name="channel_thumbnail_desc">Icône de la chaîne</string>
+    <string name="filter_all">Toutes</string>
+    <string name="filter_channels">Chaînes</string>
+    <string name="filter_playlists">Playlists</string>
+    <string name="empty_playlist">Sans playlist</string>
+    <string name="add_video_description">Remplissez tous les champs pour ajouter votre vidéo préférée</string>
+    <string name="cancel">Annuler</string>
+    <string name="save">Enregistrer</string>
+</resources>
