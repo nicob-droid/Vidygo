@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="20dp"
-    android:background="@color/white">
+    android:background="?attr/colorSurface">
 
     <!-- AppBar -->
     <com.google.android.material.appbar.AppBarLayout
@@ -42,7 +42,7 @@
                 android:text="@string/add_video_title"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@color/black"
+                android:textColor="?attr/colorOnSurface"
                 android:layout_marginTop="20dp" />
 
             <!-- Champ URL -->
@@ -108,7 +108,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/add_video_description"
                 android:textSize="12sp"
-                android:textColor="@color/gray_dark"
+                android:textColor="?attr/colorSecondary"
                 android:layout_marginTop="20dp" />
 
             <com.google.android.material.textview.MaterialTextView
@@ -116,7 +116,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:textColor="@color/teal_700"
+                android:textColor="?attr/colorSecondary"
                 android:textSize="12sp" />
 
         </LinearLayout>

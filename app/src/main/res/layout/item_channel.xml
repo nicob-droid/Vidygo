@@ -27,7 +27,7 @@
         android:ellipsize="end"
         android:gravity="center"
         android:maxLines="2"
-        android:textColor="@color/black"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="12sp"
         android:textStyle="bold" />
 
@@ -38,7 +38,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:gravity="center"
-        android:textColor="@color/teal_700"
+        android:textColor="?attr/colorSecondary"
         android:textSize="11sp" />
 
 </LinearLayout>

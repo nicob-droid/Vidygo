@@ -7,6 +7,7 @@
     android:layout_marginEnd="8dp"
     android:layout_marginTop="4dp"
     android:layout_marginBottom="4dp"
+    app:cardBackgroundColor="?attr/colorSurface"
     app:cardCornerRadius="8dp"
     app:cardElevation="3dp">
 
@@ -43,7 +44,7 @@
                 android:ellipsize="end"
                 android:maxLines="2"
                 android:text="Titre de la vidéo"
-                android:textColor="@color/black"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
@@ -56,7 +57,7 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="Nom de la chaîne"
-                android:textColor="@color/teal_700"
+                android:textColor="?attr/colorSecondary"
                 android:textSize="12sp" />
 
             <!-- Boutons -->
@@ -75,7 +76,8 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/share_video"
                     android:scaleType="centerInside"
-                    android:src="@drawable/ic_share" />
+                    android:src="@drawable/ic_share"
+                    android:tint="?attr/colorOnSurface" />
 
                 <ImageButton
                     android:id="@+id/btn_delete"
@@ -84,7 +86,8 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/delete_video"
                     android:scaleType="centerInside"
-                    android:src="@drawable/ic_delete" />
+                    android:src="@drawable/ic_delete"
+                    android:tint="?attr/colorError" />
 
             </LinearLayout>
 
