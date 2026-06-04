@@ -10,4 +10,5 @@
     <color name="gray_light">#FFF5F5F5</color>
     <color name="gray_dark">#FF616161</color>
     <color name="youtube_red">#FFFF0000</color>
+	<color name="ic_launcher_background">#5A35FF</color>
 </resources>

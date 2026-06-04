@@ -1,5 +1,6 @@
 package com.example.vidygo;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,17 +20,22 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textview.MaterialTextView;
 
-import org.json.JSONObject;
-
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Activité pour ajouter une nouvelle vidéo YouTube.
  */
 public class AddVideoActivity extends AppCompatActivity {
+
+    private static final Pattern YOUTUBE_URL_PATTERN = Pattern.compile(
+            "(https?://(?:www\\.)?(?:youtube\\.com|youtu\\.be)/\\S+)",
+            Pattern.CASE_INSENSITIVE
+    );
 
     private TextInputEditText urlInput;
     private TextInputEditText titleInput;
@@ -46,6 +52,8 @@ public class AddVideoActivity extends AppCompatActivity {
     private Runnable pendingMetadataLookup;
     /** Avatar récupéré automatiquement lors du dernier lookup de métadonnées. */
     private String fetchedChannelAvatarUrl = "";
+    private boolean launchedFromShareIntent = false;
+    private boolean suppressAutoMetadataLookup = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +68,7 @@ public class AddVideoActivity extends AppCompatActivity {
 
         // Configurer les actions
         setupActions();
+        handleIncomingShareIntent(getIntent());
     }
 
     /**
@@ -97,6 +106,7 @@ public class AddVideoActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (suppressAutoMetadataLookup) return;
                 scheduleMetadataLookup();
             }
 
@@ -152,14 +162,112 @@ public class AddVideoActivity extends AppCompatActivity {
     }
 
     private void persistVideo(String url, String title, String channel, String playlist, String channelAvatarUrl) {
+        persistVideo(url, title, channel, playlist, channelAvatarUrl, false);
+    }
+
+    private void persistVideo(String url, String title, String channel, String playlist,
+                              String channelAvatarUrl, boolean openMainAfterSave) {
         String videoId = UUID.randomUUID().toString();
         Video newVideo = new Video(videoId, title, channel, playlist, "", url, channelAvatarUrl);
 
         Logger.d("Vidéo créée : " + title + " / " + channel);
         videoPreferenceManager.saveVideo(newVideo);
-        Toast.makeText(this, "Vidéo ajoutée : " + title, Toast.LENGTH_SHORT).show();
+        if (launchedFromShareIntent) {
+            Toast.makeText(this, R.string.video_added_from_share, Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Vidéo ajoutée : " + title, Toast.LENGTH_SHORT).show();
+        }
         setResult(RESULT_OK);
+
+        if (openMainAfterSave) {
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+        }
         finish();
+    }
+
+    private void handleIncomingShareIntent(Intent intent) {
+        if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) {
+            return;
+        }
+
+        String type = intent.getType();
+        if (type == null || !type.startsWith("text/")) {
+            return;
+        }
+
+        String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
+        if (TextUtils.isEmpty(sharedText)) {
+            sharedText = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+        }
+
+        String youtubeUrl = extractFirstYoutubeUrl(sharedText);
+        if (TextUtils.isEmpty(youtubeUrl)) {
+            Toast.makeText(this, R.string.share_no_youtube_link, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        launchedFromShareIntent = true;
+        suppressAutoMetadataLookup = true;
+        urlInput.setText(youtubeUrl);
+        suppressAutoMetadataLookup = false;
+        metadataStatus.setText(R.string.metadata_loading);
+        saveButton.setEnabled(false);
+        cancelButton.setEnabled(false);
+
+        fetchMetadata(youtubeUrl, new MetadataCallback() {
+            @Override
+            public void onSuccess(String fetchedTitle, String fetchedChannel, String avatarUrl) {
+                String finalTitle = TextUtils.isEmpty(fetchedTitle)
+                        ? getString(R.string.shared_video_default_title)
+                        : fetchedTitle;
+                String finalChannel = TextUtils.isEmpty(fetchedChannel)
+                        ? getString(R.string.unknown_channel)
+                        : fetchedChannel;
+                persistVideo(youtubeUrl, finalTitle, finalChannel, "", avatarUrl, true);
+            }
+
+            @Override
+            public void onError(String message) {
+                // Même si les métadonnées échouent, on importe la vidéo partagée.
+                persistVideo(
+                        youtubeUrl,
+                        getString(R.string.shared_video_default_title),
+                        getString(R.string.unknown_channel),
+                        "",
+                        "",
+                        true
+                );
+            }
+        });
+
+        // Sécurité: si l'import n'aboutit pas (callback perdu), on rend l'écran utilisable.
+        mainHandler.postDelayed(() -> {
+            if (!isFinishing() && saveButton != null && !saveButton.isEnabled()) {
+                saveButton.setEnabled(true);
+                cancelButton.setEnabled(true);
+                metadataStatus.setText(R.string.metadata_retry);
+            }
+        }, 5000);
+    }
+
+    private String extractFirstYoutubeUrl(String input) {
+        if (TextUtils.isEmpty(input)) {
+            return "";
+        }
+
+        Matcher matcher = YOUTUBE_URL_PATTERN.matcher(input);
+        if (!matcher.find()) {
+            return "";
+        }
+
+        String url = matcher.group(1);
+        if (TextUtils.isEmpty(url)) {
+            return "";
+        }
+
+        return url.replaceAll("[),.;!?]+$", "").trim();
     }
 
     private void scheduleMetadataLookup() {
