@@ -479,7 +479,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     }
 
     private void styleDialogButtons(AlertDialog dialog) {
-        int color = ContextCompat.getColor(this, R.color.purple_700);
+        int color = ContextCompat.getColor(this, R.color.appbar_text);
         if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(color);
         }
@@ -545,7 +545,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         }
 
         final int[] newSelection = {selectedIndex};
-        new AlertDialog.Builder(this)
+        AlertDialog sortDialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.sort_dialog_title)
                 .setSingleChoiceItems(labels, selectedIndex, (dialog, which) -> newSelection[0] = which)
                 .setPositiveButton(R.string.apply, (dialog, which) -> {
@@ -555,7 +555,9 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
                     invalidateOptionsMenu();
                 })
                 .setNegativeButton(R.string.cancel, null)
-                .show();
+                .create();
+        sortDialog.show();
+        styleDialogButtons(sortDialog);
     }
 
     private void saveSortMode(SortMode sortMode) {
