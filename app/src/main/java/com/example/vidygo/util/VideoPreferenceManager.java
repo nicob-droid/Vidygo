@@ -165,6 +165,95 @@ public class VideoPreferenceManager {
     }
 
     /**
+     * Retourne les playlists explicites (créées manuellement), triées.
+     */
+    public List<String> getExplicitPlaylistNames() {
+        List<String> result = getExplicitPlaylists();
+        Collections.sort(result, String::compareToIgnoreCase);
+        return result;
+    }
+
+    /**
+     * Renomme une playlist dans la liste explicite et dans les vidéos liées.
+     */
+    public void renamePlaylist(String oldName, String newName) {
+        String oldNorm = normalizePlaylistName(oldName);
+        String newNorm = normalizePlaylistName(newName);
+        if (oldNorm.isEmpty() || newNorm.isEmpty() || oldNorm.equalsIgnoreCase(newNorm)) {
+            return;
+        }
+
+        List<String> explicit = getExplicitPlaylists();
+        boolean hadOld = false;
+        for (int i = 0; i < explicit.size(); i++) {
+            if (oldNorm.equalsIgnoreCase(explicit.get(i))) {
+                explicit.set(i, newNorm);
+                hadOld = true;
+            }
+        }
+        if (!hadOld) {
+            explicit.add(newNorm);
+        }
+
+        List<Video> videos = getVideos();
+        for (Video video : videos) {
+            if (isSamePlaylist(oldNorm, video.getPlaylistName())) {
+                video.setPlaylistName(newNorm);
+            }
+        }
+        saveVideos(videos);
+        saveExplicitPlaylists(explicit);
+    }
+
+    /**
+     * Supprime une playlist en conservant les vidéos (elles perdent juste l'affectation playlist).
+     */
+    public void deletePlaylistKeepVideos(String playlistName) {
+        String normalized = normalizePlaylistName(playlistName);
+        if (normalized.isEmpty()) {
+            return;
+        }
+
+        List<String> explicit = getExplicitPlaylists();
+        explicit.removeIf(name -> normalized.equalsIgnoreCase(name));
+        saveExplicitPlaylists(explicit);
+
+        List<Video> videos = getVideos();
+        for (Video video : videos) {
+            if (isSamePlaylist(normalized, video.getPlaylistName())) {
+                video.setPlaylistName("");
+            }
+        }
+        saveVideos(videos);
+    }
+
+    /**
+     * Supprime une playlist et toutes les vidéos qui y sont associées.
+     */
+    public void deletePlaylistWithVideos(String playlistName) {
+        String normalized = normalizePlaylistName(playlistName);
+        if (normalized.isEmpty()) {
+            return;
+        }
+
+        List<String> explicit = getExplicitPlaylists();
+        explicit.removeIf(name -> normalized.equalsIgnoreCase(name));
+        saveExplicitPlaylists(explicit);
+
+        List<Video> videos = getVideos();
+        videos.removeIf(video -> isSamePlaylist(normalized, video.getPlaylistName()));
+        saveVideos(videos);
+    }
+
+    /**
+     * Restaure un état complet (utilisé par l'action Undo).
+     */
+    public void restoreState(List<Video> videos, List<String> explicitPlaylists) {
+        saveVideos(videos == null ? new ArrayList<>() : videos);
+        saveExplicitPlaylists(explicitPlaylists == null ? new ArrayList<>() : explicitPlaylists);
+    }
+
+    /**
      * Nettoie toutes les vidéos
      */
     public void clearAll() {
@@ -189,11 +278,38 @@ public class VideoPreferenceManager {
     }
 
     private void saveExplicitPlaylists(List<String> playlists) {
-        JSONArray array = new JSONArray();
+        List<String> normalized = new ArrayList<>();
         for (String playlist : playlists) {
+            String value = normalizePlaylistName(playlist);
+            if (value.isEmpty()) {
+                continue;
+            }
+            boolean exists = false;
+            for (String existing : normalized) {
+                if (value.equalsIgnoreCase(existing)) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                normalized.add(value);
+            }
+        }
+        Collections.sort(normalized, String::compareToIgnoreCase);
+
+        JSONArray array = new JSONArray();
+        for (String playlist : normalized) {
             array.put(playlist);
         }
         sharedPreferences.edit().putString(KEY_PLAYLISTS, array.toString()).apply();
+    }
+
+    private String normalizePlaylistName(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private boolean isSamePlaylist(String a, String b) {
+        return normalizePlaylistName(a).equalsIgnoreCase(normalizePlaylistName(b));
     }
 }
 

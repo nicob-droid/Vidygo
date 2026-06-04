@@ -6,6 +6,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -46,6 +47,10 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
         void onChannelClick(ChannelItem channel);
     }
 
+    public interface OnChannelLongClickListener {
+        void onChannelLongClick(ChannelItem channel);
+    }
+
     /** Cache en mémoire : nom de la chaîne → URL de l'avatar. */
     private static final Map<String, String> avatarCache = new ConcurrentHashMap<>();
 
@@ -54,11 +59,18 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
 
     private final List<ChannelItem> channels;
     private final OnChannelClickListener listener;
+    private final OnChannelLongClickListener longClickListener;
     private final Mode mode;
     private List<String> explicitPlaylistNames = Collections.emptyList();
 
     public ChannelAdapter(List<Video> videos, Mode mode, OnChannelClickListener listener) {
+        this(videos, mode, listener, null);
+    }
+
+    public ChannelAdapter(List<Video> videos, Mode mode, OnChannelClickListener listener,
+                          OnChannelLongClickListener longClickListener) {
         this.listener = listener;
+        this.longClickListener = longClickListener;
         this.mode = mode;
         this.channels = buildChannels(videos);
         if (this.mode == Mode.CHANNELS) {
@@ -210,7 +222,7 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
 
     @Override
     public void onBindViewHolder(@NonNull ChannelViewHolder holder, int position) {
-        holder.bind(channels.get(position), mode, listener, executor, mainHandler);
+        holder.bind(channels.get(position), mode, listener, longClickListener, executor, mainHandler);
     }
 
     @Override
@@ -222,15 +234,18 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
         private final ImageView thumbnail;
         private final TextView name;
         private final TextView count;
+        private final ImageButton moreButton;
 
         ChannelViewHolder(@NonNull View itemView) {
             super(itemView);
             thumbnail = itemView.findViewById(R.id.channel_thumbnail);
             name = itemView.findViewById(R.id.channel_name);
             count = itemView.findViewById(R.id.channel_count);
+            moreButton = itemView.findViewById(R.id.btn_channel_more);
         }
 
         void bind(ChannelItem channel, Mode mode, OnChannelClickListener listener,
+                  OnChannelLongClickListener longClickListener,
                   ExecutorService executor, Handler mainHandler) {
             name.setText(channel.getName());
             int n = channel.getVideoCount();
@@ -240,12 +255,28 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
             thumbnail.setTag(channel.getName());
 
             if (mode == Mode.PLAYLISTS) {
-                loadCircular(channel.getThumbnailUrl(), R.drawable.ic_launcher_foreground);
+                loadCircular(channel.getThumbnailUrl(), R.mipmap.ic_launcher);
+                moreButton.setVisibility(View.VISIBLE);
+                moreButton.setOnClickListener(v -> {
+                    if (longClickListener != null) {
+                        longClickListener.onChannelLongClick(channel);
+                    }
+                });
                 itemView.setOnClickListener(v -> {
                     if (listener != null) listener.onChannelClick(channel);
                 });
+                itemView.setOnLongClickListener(v -> {
+                    if (longClickListener != null) {
+                        longClickListener.onChannelLongClick(channel);
+                        return true;
+                    }
+                    return false;
+                });
                 return;
             }
+
+            moreButton.setVisibility(View.GONE);
+            moreButton.setOnClickListener(null);
 
             // Vérifie le cache d'abord
             String cached = avatarCache.get(channel.getName());
@@ -286,6 +317,7 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
             itemView.setOnClickListener(v -> {
                 if (listener != null) listener.onChannelClick(channel);
             });
+            itemView.setOnLongClickListener(null);
         }
 
         private void loadCircular(String url, int placeholderRes) {

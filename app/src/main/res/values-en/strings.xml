@@ -59,5 +59,15 @@
     <string name="video_added_to_playlist">Video added to playlist %1$s</string>
     <string name="playlist_created">Playlist created</string>
     <string name="playlist_already_exists">This playlist already exists</string>
+    <string name="rename_playlist">Rename</string>
+    <string name="delete_playlist">Delete</string>
+    <string name="delete_playlist_only">Delete playlist only</string>
+    <string name="delete_playlist_and_videos">Delete playlist and its videos</string>
+    <string name="delete_playlist_confirm_title">Delete "%1$s"?</string>
+    <string name="playlist_deleted">Playlist deleted</string>
+    <string name="playlist_deleted_with_videos">Playlist and videos deleted</string>
+    <string name="playlist_renamed">Playlist renamed</string>
+    <string name="undo">Undo</string>
+    <string name="playlist_actions">Playlist actions</string>
 </resources>
 

@@ -26,6 +26,7 @@ import com.example.vidygo.util.Logger;
 import com.example.vidygo.util.VideoPreferenceManager;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -201,6 +202,8 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             Intent intent = new Intent(this, ChannelVideosActivity.class);
             intent.putExtra(ChannelVideosActivity.EXTRA_PLAYLIST_NAME, playlist.getName());
             startActivity(intent);
+        }, playlist -> {
+            showPlaylistActionsDialog(playlist.getName());
         });
         playlistAdapter.setExplicitPlaylistNames(videoPreferenceManager.getPlaylistNames());
         currentAdapter = videoAdapter;
@@ -289,25 +292,128 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         AlertDialog createDialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.create_playlist)
                 .setView(input)
-                .setPositiveButton(R.string.create, (dialog, which) -> {
-                    String playlistName = input.getText() == null ? "" : input.getText().toString().trim();
-                    if (TextUtils.isEmpty(playlistName)) {
-                        Toast.makeText(this, R.string.playlist_name_required, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    if (hasPlaylistName(playlistName)) {
-                        Toast.makeText(this, R.string.playlist_already_exists, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    videoPreferenceManager.savePlaylist(playlistName);
-                    chipPlaylists.setChecked(true);
-                    setMode("playlists");
-                    Toast.makeText(this, R.string.playlist_created, Toast.LENGTH_SHORT).show();
-                })
+                .setPositiveButton(R.string.create, null)
                 .setNegativeButton(R.string.cancel, null)
                 .create();
         createDialog.show();
         styleDialogButtons(createDialog);
+        createDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String playlistName = input.getText() == null ? "" : input.getText().toString().trim();
+            if (TextUtils.isEmpty(playlistName)) {
+                input.setError(getString(R.string.playlist_name_required));
+                return;
+            }
+            if (hasPlaylistName(playlistName)) {
+                input.setError(getString(R.string.playlist_already_exists));
+                return;
+            }
+            videoPreferenceManager.savePlaylist(playlistName);
+            chipPlaylists.setChecked(true);
+            setMode("playlists");
+            Toast.makeText(this, R.string.playlist_created, Toast.LENGTH_SHORT).show();
+            createDialog.dismiss();
+        });
+    }
+
+    private void showPlaylistActionsDialog(String playlistName) {
+        if (TextUtils.isEmpty(playlistName)) {
+            return;
+        }
+
+        String[] actions = {
+                getString(R.string.rename_playlist),
+                getString(R.string.delete_playlist)
+        };
+
+        AlertDialog actionsDialog = new AlertDialog.Builder(this)
+                .setTitle(playlistName)
+                .setItems(actions, (dialog, which) -> {
+                    if (which == 0) {
+                        showRenamePlaylistDialog(playlistName);
+                    } else if (which == 1) {
+                        showDeletePlaylistDialog(playlistName);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        actionsDialog.show();
+        styleDialogButtons(actionsDialog);
+    }
+
+    private void showRenamePlaylistDialog(String oldName) {
+        EditText input = new EditText(this);
+        input.setHint(R.string.playlist_name_hint);
+        input.setText(oldName);
+        input.setSelection(input.getText() == null ? 0 : input.getText().length());
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        input.setPadding(pad, pad, pad, pad);
+
+        AlertDialog renameDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.rename_playlist)
+                .setView(input)
+                .setPositiveButton(R.string.apply, (dialog, which) -> {
+                    String newName = input.getText() == null ? "" : input.getText().toString().trim();
+                    if (TextUtils.isEmpty(newName)) {
+                        Toast.makeText(this, R.string.playlist_name_required, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (!oldName.equalsIgnoreCase(newName) && hasPlaylistName(newName)) {
+                        Toast.makeText(this, R.string.playlist_already_exists, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    videoPreferenceManager.renamePlaylist(oldName, newName);
+                    refreshStoredVideoList();
+                    Toast.makeText(this, R.string.playlist_renamed, Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        renameDialog.show();
+        styleDialogButtons(renameDialog);
+    }
+
+    private void showDeletePlaylistDialog(String playlistName) {
+        final List<Video> previousVideos = new ArrayList<>(videoPreferenceManager.getVideos());
+        final List<String> previousExplicit = new ArrayList<>(videoPreferenceManager.getExplicitPlaylistNames());
+
+        String[] options = {
+                getString(R.string.delete_playlist_only),
+                getString(R.string.delete_playlist_and_videos)
+        };
+
+        AlertDialog deleteDialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.delete_playlist_confirm_title, playlistName))
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        videoPreferenceManager.deletePlaylistKeepVideos(playlistName);
+                        refreshStoredVideoList();
+                        showPlaylistUndoSnackbar(
+                                getString(R.string.playlist_deleted),
+                                previousVideos,
+                                previousExplicit
+                        );
+                    } else if (which == 1) {
+                        videoPreferenceManager.deletePlaylistWithVideos(playlistName);
+                        refreshStoredVideoList();
+                        showPlaylistUndoSnackbar(
+                                getString(R.string.playlist_deleted_with_videos),
+                                previousVideos,
+                                previousExplicit
+                        );
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        deleteDialog.show();
+        styleDialogButtons(deleteDialog);
+    }
+
+    private void showPlaylistUndoSnackbar(String message, List<Video> previousVideos, List<String> previousExplicit) {
+        Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG)
+                .setAction(R.string.undo, v -> {
+                    videoPreferenceManager.restoreState(previousVideos, previousExplicit);
+                    refreshStoredVideoList();
+                })
+                .show();
     }
 
     private void showAssignPlaylistDialog(Video video) {
