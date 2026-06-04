@@ -260,10 +260,38 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
      */
     @Override
     public void onVideoDelete(Video video) {
-        videoPreferenceManager.deleteVideo(video.getId());
-        videoList.remove(video);
-        refreshList();
-        Toast.makeText(this, "Vidéo supprimée", Toast.LENGTH_SHORT).show();
+        showDeleteVideoConfirmation(video);
+    }
+
+    private void showDeleteVideoConfirmation(Video video) {
+        String safeTitle = (video == null || TextUtils.isEmpty(video.getTitle()))
+                ? getString(R.string.shared_video_default_title)
+                : video.getTitle();
+
+        AlertDialog deleteVideoDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.delete_video)
+                .setMessage(getString(R.string.delete_video_confirm_message, safeTitle))
+                .setPositiveButton(R.string.confirm_delete, (dialog, which) -> {
+                    if (video == null) {
+                        return;
+                    }
+                    videoPreferenceManager.deleteVideo(video.getId());
+                    videoList.remove(video);
+                    refreshList();
+                    Toast.makeText(this, R.string.video_deleted, Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        deleteVideoDialog.show();
+        styleDeleteVideoDialogButtons(deleteVideoDialog);
+    }
+
+    private void styleDeleteVideoDialogButtons(AlertDialog dialog) {
+        styleDialogButtons(dialog);
+        int destructiveColor = ContextCompat.getColor(this, android.R.color.holo_red_dark);
+        if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(destructiveColor);
+        }
     }
 
     /**

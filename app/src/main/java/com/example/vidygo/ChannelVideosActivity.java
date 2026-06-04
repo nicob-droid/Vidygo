@@ -8,6 +8,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -107,10 +108,48 @@ public class ChannelVideosActivity extends AppCompatActivity implements VideoAda
 
     @Override
     public void onVideoDelete(Video video) {
-        videoPreferenceManager.deleteVideo(video.getId());
-        videoList.remove(video);
-        videoAdapter.updateVideos(videoList);
-        Toast.makeText(this, "Vidéo supprimée", Toast.LENGTH_SHORT).show();
+        showDeleteVideoConfirmation(video);
+    }
+
+    private void showDeleteVideoConfirmation(Video video) {
+        String safeTitle = (video == null || TextUtils.isEmpty(video.getTitle()))
+                ? getString(R.string.shared_video_default_title)
+                : video.getTitle();
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.delete_video)
+                .setMessage(getString(R.string.delete_video_confirm_message, safeTitle))
+                .setPositiveButton(R.string.confirm_delete, (d, which) -> {
+                    if (video == null) {
+                        return;
+                    }
+                    videoPreferenceManager.deleteVideo(video.getId());
+                    videoList.remove(video);
+                    videoAdapter.updateVideos(videoList);
+                    Toast.makeText(this, R.string.video_deleted, Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        dialog.show();
+        styleDeleteVideoDialogButtons(dialog);
+    }
+
+    private void styleDeleteVideoDialogButtons(AlertDialog dialog) {
+        styleDialogButtons(dialog);
+        int destructiveColor = ContextCompat.getColor(this, android.R.color.holo_red_dark);
+        if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(destructiveColor);
+        }
+    }
+
+    private void styleDialogButtons(AlertDialog dialog) {
+        int color = ContextCompat.getColor(this, R.color.purple_700);
+        if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(color);
+        }
+        if (dialog.getButton(AlertDialog.BUTTON_NEGATIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(color);
+        }
     }
 
     @Override

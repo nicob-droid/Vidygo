@@ -69,4 +69,7 @@
     <string name="playlist_renamed">Playlist renommée</string>
     <string name="undo">Annuler</string>
     <string name="playlist_actions">Actions de la playlist</string>
+    <string name="delete_video_confirm_message">Supprimer définitivement la vidéo "%1$s" ?</string>
+    <string name="video_deleted">Vidéo supprimée</string>
+    <string name="confirm_delete">Supprimer</string>
 </resources>
