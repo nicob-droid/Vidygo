@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
 
     private static final String UI_PREFS = "vidygo_ui_prefs";
     private static final String KEY_ALL_SORT_MODE = "all_sort_mode";
+    private static final String STATE_CURRENT_MODE = "state_current_mode";
     private static final String TEST_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111";
 
     private RecyclerView videosRecyclerView;
@@ -83,6 +84,9 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         setContentView(R.layout.activity_main);
         videoPreferenceManager = new VideoPreferenceManager(this);
         currentSortMode = loadSortMode();
+        if (savedInstanceState != null) {
+            currentMode = savedInstanceState.getString(STATE_CURRENT_MODE, "all");
+        }
 
         // Initialiser les vues
         initializeViews();
@@ -147,7 +151,13 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         chipAll.setOnClickListener(v -> setMode("all"));
         chipChannels.setOnClickListener(v -> setMode("channels"));
         chipPlaylists.setOnClickListener(v -> setMode("playlists"));
-        chipAll.setChecked(true);
+        applyModeSelection(currentMode);
+    }
+
+    private void applyModeSelection(String mode) {
+        chipAll.setChecked("all".equals(mode));
+        chipChannels.setChecked("channels".equals(mode));
+        chipPlaylists.setChecked("playlists".equals(mode));
     }
 
     /**
@@ -187,8 +197,15 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
 
     private void setMode(String mode) {
         currentMode = mode;
+        applyModeSelection(mode);
         invalidateOptionsMenu();
         refreshList();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        outState.putString(STATE_CURRENT_MODE, currentMode);
+        super.onSaveInstanceState(outState);
     }
 
     private void refreshList() {
