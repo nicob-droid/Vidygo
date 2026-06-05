@@ -25,6 +25,20 @@ val admobHomeBannerUnitId = (
         ?: "ca-app-pub-3940256099942544/6300978111"
 ).replace("\\", "\\\\").replace("\"", "\\\"")
 
+val uploadStoreFile = localProperties.getProperty("upload.store.file")
+    ?: providers.gradleProperty("upload.store.file").orNull
+val uploadStorePassword = localProperties.getProperty("upload.store.password")
+    ?: providers.gradleProperty("upload.store.password").orNull
+val uploadKeyAlias = localProperties.getProperty("upload.key.alias")
+    ?: providers.gradleProperty("upload.key.alias").orNull
+val uploadKeyPassword = localProperties.getProperty("upload.key.password")
+    ?: providers.gradleProperty("upload.key.password").orNull
+
+val hasReleaseSigningConfig = !uploadStoreFile.isNullOrBlank()
+        && !uploadStorePassword.isNullOrBlank()
+        && !uploadKeyAlias.isNullOrBlank()
+        && !uploadKeyPassword.isNullOrBlank()
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -41,11 +55,22 @@ val versionMinor = requireVersionPart("VERSION_MINOR")
 val versionPatch = requireVersionPart("VERSION_PATCH")
 
 android {
-    namespace = "com.example.vidygo"
+    namespace = "io.github.nicobdroid.vidygo"
     compileSdk = 36
 
+    signingConfigs {
+        create("release") {
+            if (hasReleaseSigningConfig) {
+                storeFile = file(uploadStoreFile!!)
+                storePassword = uploadStorePassword
+                keyAlias = uploadKeyAlias
+                keyPassword = uploadKeyPassword
+            }
+        }
+    }
+
     defaultConfig {
-        applicationId = "com.example.vidygo"
+        applicationId = "io.github.nicobdroid.vidygo"
         minSdk = 26
         targetSdk = 36
         versionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
@@ -60,6 +85,9 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (hasReleaseSigningConfig) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

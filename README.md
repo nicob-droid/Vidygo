@@ -67,6 +67,10 @@ app/src/main/
 3. Attendez que Gradle se synchronise
 4. Exécutez l'application sur un émulateur ou un appareil
 
+## Publication Play Store
+
+Consultez `PLAY_STORE_FIRST_RELEASE.md` pour la checklist complete de premiere livraison (versioning, signature upload key, AAB, Play Console).
+
 ## Utilisation
 
 1. **Ajouter une vidéo** : Appuyez sur le bouton `+` en bas à droite
