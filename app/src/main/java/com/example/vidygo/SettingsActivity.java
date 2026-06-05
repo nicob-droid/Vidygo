@@ -1,14 +1,19 @@
 package com.example.vidygo;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
 
 import com.example.vidygo.util.ThemePreferenceManager;
+import com.example.vidygo.util.VideoPreferenceManager;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -41,12 +46,14 @@ public class SettingsActivity extends AppCompatActivity {
         private static final String KEY_TERMS = "pref_terms";
         private static final String KEY_PRIVACY = "pref_privacy";
         private static final String KEY_ABOUT = "pref_about";
+        private static final String KEY_RESET_APP = "pref_reset_app";
 
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
             setupThemePreference();
             setupLegalAndAboutPreferences();
+            setupResetPreference();
         }
 
         private void setupThemePreference() {
@@ -118,6 +125,57 @@ public class SettingsActivity extends AppCompatActivity {
                         .setTextColor(buttonColor);
             });
             dialog.show();
+        }
+
+        private void setupResetPreference() {
+            Preference reset = findPreference(KEY_RESET_APP);
+            if (reset == null) {
+                return;
+            }
+            reset.setOnPreferenceClickListener(preference -> {
+                showResetConfirmationDialog();
+                return true;
+            });
+        }
+
+        private void showResetConfirmationDialog() {
+            androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.settings_reset_dialog_title)
+                    .setMessage(R.string.settings_reset_dialog_message)
+                    .setNegativeButton(R.string.cancel, null)
+                    .setPositiveButton(R.string.settings_reset_confirm, (d, which) -> resetApplicationData())
+                    .create();
+
+            dialog.setOnShowListener(unused -> {
+                int neutralColor = MaterialColors.getColor(
+                        requireContext(),
+                        androidx.appcompat.R.attr.actionMenuTextColor,
+                        0
+                );
+                int destructiveColor = ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark);
+                if (dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE) != null) {
+                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(neutralColor);
+                }
+                if (dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE) != null) {
+                    dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(destructiveColor);
+                }
+            });
+            dialog.show();
+        }
+
+        private void resetApplicationData() {
+            Context context = requireContext();
+            new VideoPreferenceManager(context).clearAll();
+            context.getSharedPreferences("vidygo_ui_prefs", Context.MODE_PRIVATE).edit().clear().apply();
+            PreferenceManager.getDefaultSharedPreferences(context).edit().clear().apply();
+            ThemePreferenceManager.applyTheme(ThemePreferenceManager.MODE_SYSTEM);
+
+            Toast.makeText(context, R.string.settings_reset_done, Toast.LENGTH_SHORT).show();
+
+            Intent intent = new Intent(context, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            requireActivity().finishAffinity();
         }
     }
 

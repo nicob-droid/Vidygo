@@ -50,6 +50,12 @@
     <string name="settings_privacy_content">Vidygo stocke localement vos vidéos sauvegardées sur votre appareil. Aucune donnée personnelle n\'est vendue ni partagée à des fins commerciales.</string>
     <string name="settings_about">À propos de l\'app</string>
     <string name="settings_about_content">Version: %1$s\nBuild: %2$d</string>
+    <string name="settings_reset_app">Réinitialiser l\'application</string>
+    <string name="settings_reset_app_hint">Supprimer toutes les vidéos, playlists et préférences locales</string>
+    <string name="settings_reset_dialog_title">Réinitialiser l\'application ?</string>
+    <string name="settings_reset_dialog_message">Cette action supprimera toutes vos données locales (vidéos, playlists, tri et thème). Elle est irréversible.</string>
+    <string name="settings_reset_confirm">Réinitialiser</string>
+    <string name="settings_reset_done">Application réinitialisée</string>
     <string name="create_playlist">Créer une playlist</string>
     <string name="create">Créer</string>
     <string name="playlist_name_hint">Nom de la playlist</string>

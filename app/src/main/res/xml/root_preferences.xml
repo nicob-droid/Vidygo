@@ -37,6 +37,11 @@
         <Preference
             android:key="pref_about"
             android:title="@string/settings_about" />
+
+        <Preference
+            android:key="pref_reset_app"
+            android:title="@string/settings_reset_app"
+            android:summary="@string/settings_reset_app_hint" />
     </PreferenceCategory>
 
 </PreferenceScreen>
