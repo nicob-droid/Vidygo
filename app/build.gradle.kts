@@ -29,6 +29,17 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+fun requireVersionPart(key: String): Int {
+    val raw = providers.gradleProperty(key).orNull
+        ?: error("Missing required Gradle property '$key'. Define it in gradle.properties.")
+    return raw.toIntOrNull()
+        ?: error("Gradle property '$key' must be an integer. Current value: '$raw'")
+}
+
+val versionMajor = requireVersionPart("VERSION_MAJOR")
+val versionMinor = requireVersionPart("VERSION_MINOR")
+val versionPatch = requireVersionPart("VERSION_PATCH")
+
 android {
     namespace = "com.example.vidygo"
     compileSdk = 36
@@ -37,8 +48,8 @@ android {
         applicationId = "com.example.vidygo"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
+        versionName = "${versionMajor}.${versionMinor}.${versionPatch}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "YOUTUBE_DATA_API_KEY", "\"$youtubeDataApiKey\"")
