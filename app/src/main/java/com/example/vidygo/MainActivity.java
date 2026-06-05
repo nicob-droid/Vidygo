@@ -1,6 +1,7 @@
 package com.example.vidygo;
 
 import android.content.Intent;
+import android.view.Gravity;
 import android.net.Uri;
 import android.os.Bundle;
 import android.content.SharedPreferences;
@@ -8,6 +9,7 @@ import android.text.TextUtils;
 import android.widget.LinearLayout;
 import android.widget.EditText;
 import android.widget.Toast;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -25,6 +27,9 @@ import com.example.vidygo.adapter.VideoAdapter;
 import com.example.vidygo.model.Video;
 import com.example.vidygo.util.Logger;
 import com.example.vidygo.util.VideoPreferenceManager;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -42,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
 
     private static final String UI_PREFS = "vidygo_ui_prefs";
     private static final String KEY_ALL_SORT_MODE = "all_sort_mode";
+    private static final String TEST_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111";
 
     private RecyclerView videosRecyclerView;
     private VideoAdapter videoAdapter;
@@ -53,6 +59,8 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     private LinearLayout emptyState;
     private FloatingActionButton fabAddVideo;
     private FloatingActionButton fabAddPlaylist;
+    private FrameLayout adContainerHome;
+    private AdView adViewHome;
     private VideoPreferenceManager videoPreferenceManager;
     private String currentMode = "all";
     private Chip chipAll;
@@ -88,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
 
         // Configurer les actions
         setupActions();
+        setupAdBanner();
 
         // Afficher l'état vide si la liste est vide
         updateEmptyState();
@@ -101,11 +110,37 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         emptyState = findViewById(R.id.empty_state);
         fabAddVideo = findViewById(R.id.fab_add_video);
         fabAddPlaylist = findViewById(R.id.fab_add_playlist);
+        adContainerHome = findViewById(R.id.ad_container_home);
         chipAll = findViewById(R.id.chip_all);
         chipChannels = findViewById(R.id.chip_channels);
         chipPlaylists = findViewById(R.id.chip_playlists);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+    }
+
+    private void setupAdBanner() {
+        if (adContainerHome == null) {
+            return;
+        }
+
+        String adUnitId = BuildConfig.ADMOB_HOME_BANNER_UNIT_ID;
+        if (TextUtils.isEmpty(adUnitId)) {
+            adUnitId = TEST_BANNER_AD_UNIT_ID;
+        }
+
+        adViewHome = new AdView(this);
+        adViewHome.setAdSize(AdSize.BANNER);
+        adViewHome.setAdUnitId(adUnitId);
+        FrameLayout.LayoutParams adLayoutParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER_HORIZONTAL
+        );
+        adViewHome.setLayoutParams(adLayoutParams);
+        adContainerHome.removeAllViews();
+        adContainerHome.addView(adViewHome);
+
+        adViewHome.loadAd(new AdRequest.Builder().build());
     }
 
     private void setupFilters() {
@@ -126,9 +161,28 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     @Override
     protected void onResume() {
         super.onResume();
+        if (adViewHome != null) {
+            adViewHome.resume();
+        }
         // Recharger la liste au retour de l'écran d'ajout.
         videoList = new ArrayList<>(videoPreferenceManager.getVideos());
         refreshList();
+    }
+
+    @Override
+    protected void onPause() {
+        if (adViewHome != null) {
+            adViewHome.pause();
+        }
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (adViewHome != null) {
+            adViewHome.destroy();
+        }
+        super.onDestroy();
     }
 
     private void setMode(String mode) {

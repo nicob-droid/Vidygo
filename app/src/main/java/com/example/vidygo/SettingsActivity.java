@@ -3,12 +3,15 @@ package com.example.vidygo;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
 import com.example.vidygo.util.ThemePreferenceManager;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.color.MaterialColors;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /**
  * Écran Paramètres : apparence, informations légales et à propos.
@@ -88,22 +91,33 @@ public class SettingsActivity extends AppCompatActivity {
             if (about != null) {
                 about.setSummary(aboutText);
                 about.setOnPreferenceClickListener(preference -> {
-                    new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                            .setTitle(R.string.settings_about)
-                            .setMessage(aboutText)
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show();
+                    showMessageDialog(R.string.settings_about, aboutText);
                     return true;
                 });
             }
         }
 
         private void showMessageDialog(int titleResId, int messageResId) {
-            new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            showMessageDialog(titleResId, getString(messageResId));
+        }
+
+        private void showMessageDialog(int titleResId, CharSequence message) {
+            androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
                     .setTitle(titleResId)
-                    .setMessage(messageResId)
+                    .setMessage(message)
                     .setPositiveButton(android.R.string.ok, null)
-                    .show();
+                    .create();
+
+            dialog.setOnShowListener(unused -> {
+                int buttonColor = MaterialColors.getColor(
+                        requireContext(),
+                        androidx.appcompat.R.attr.actionMenuTextColor,
+                        0
+                );
+                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                        .setTextColor(buttonColor);
+            });
+            dialog.show();
         }
     }
 
