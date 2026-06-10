@@ -16,7 +16,7 @@
     <string name="video_title_hint">Titre de la vidéo</string>
     <string name="video_channel_hint">Nom de la chaîne</string>
     <string name="video_playlist_hint">Nom de la playlist (optionnel)</string>
-    <string name="metadata_loading">Récupération automatique du titre et de la chaîne…</string>
+    <string name="metadata_loading">Chargement…</string>
     <string name="metadata_loaded">Titre et chaîne récupérés automatiquement</string>
     <string name="metadata_failed">Impossible de récupérer automatiquement le titre et la chaîne</string>
     <string name="metadata_retry">Réessaie avec un lien YouTube valide</string>

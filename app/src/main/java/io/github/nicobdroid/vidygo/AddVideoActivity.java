@@ -7,6 +7,7 @@ import android.os.Looper;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -17,6 +18,7 @@ import io.github.nicobdroid.vidygo.util.VideoPreferenceManager;
 import io.github.nicobdroid.vidygo.util.YouTubeMetadataUtil;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textview.MaterialTextView;
 
@@ -33,6 +35,8 @@ import java.util.regex.Pattern;
 public class AddVideoActivity extends AppCompatActivity {
 
     public static final String EXTRA_PREFILL_PLAYLIST = "prefill_playlist_name";
+    private static final String STATE_FETCHED_CHANNEL_AVATAR_URL = "state_fetched_channel_avatar_url";
+    private static final String STATE_LAUNCHED_FROM_SHARE_INTENT = "state_launched_from_share_intent";
 
     private static final Pattern YOUTUBE_URL_PATTERN = Pattern.compile(
             "(https?://(?:www\\.)?(?:youtube\\.com|youtu\\.be)/\\S+)",
@@ -47,6 +51,8 @@ public class AddVideoActivity extends AppCompatActivity {
     private MaterialButton cancelButton;
     private MaterialToolbar toolbar;
     private MaterialTextView metadataStatus;
+    private CircularProgressIndicator metadataLoadingIndicator;
+    private View metadataLoadingOverlay;
     private VideoPreferenceManager videoPreferenceManager;
     private final ExecutorService metadataExecutor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -56,6 +62,8 @@ public class AddVideoActivity extends AppCompatActivity {
     private String fetchedChannelAvatarUrl = "";
     private boolean launchedFromShareIntent = false;
     private boolean suppressAutoMetadataLookup = false;
+    private boolean restoringFromSavedState = false;
+    private String restoredUrlSnapshot = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +72,12 @@ public class AddVideoActivity extends AppCompatActivity {
 
         Logger.d("AddVideoActivity créée");
         videoPreferenceManager = new VideoPreferenceManager(this);
+        restoringFromSavedState = savedInstanceState != null;
+        if (restoringFromSavedState) {
+            // Empêche les TextWatcher de relancer un fetch pendant la restauration automatique.
+            suppressAutoMetadataLookup = true;
+            restoreState(savedInstanceState);
+        }
 
         // Initialiser les vues
         initializeViews();
@@ -71,7 +85,32 @@ public class AddVideoActivity extends AppCompatActivity {
 
         // Configurer les actions
         setupActions();
-        handleIncomingShareIntent(getIntent());
+        if (savedInstanceState == null) {
+            handleIncomingShareIntent(getIntent());
+        }
+    }
+
+    private void restoreState(Bundle savedInstanceState) {
+        fetchedChannelAvatarUrl = savedInstanceState.getString(STATE_FETCHED_CHANNEL_AVATAR_URL, "");
+        launchedFromShareIntent = savedInstanceState.getBoolean(STATE_LAUNCHED_FROM_SHARE_INTENT, false);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if (restoringFromSavedState) {
+            // Ne relance pas le fetch sur l'URL restaurée telle quelle.
+            restoredUrlSnapshot = getText(urlInput);
+            restoringFromSavedState = false;
+            suppressAutoMetadataLookup = false;
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_FETCHED_CHANNEL_AVATAR_URL, fetchedChannelAvatarUrl);
+        outState.putBoolean(STATE_LAUNCHED_FROM_SHARE_INTENT, launchedFromShareIntent);
     }
 
     private void prefillPlaylistFromIntent() {
@@ -91,6 +130,8 @@ public class AddVideoActivity extends AppCompatActivity {
         channelInput = findViewById(R.id.video_channel_input);
         playlistInput = findViewById(R.id.video_playlist_input);
         metadataStatus = findViewById(R.id.metadata_status);
+        metadataLoadingIndicator = findViewById(R.id.metadata_loading_indicator);
+        metadataLoadingOverlay = findViewById(R.id.metadata_loading_overlay);
         saveButton = findViewById(R.id.btn_save);
         cancelButton = findViewById(R.id.btn_cancel);
 
@@ -117,6 +158,12 @@ public class AddVideoActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (suppressAutoMetadataLookup) return;
+
+                String currentUrl = s == null ? "" : s.toString().trim();
+                if (restoredUrlSnapshot != null && restoredUrlSnapshot.equals(currentUrl)) {
+                    return;
+                }
+                restoredUrlSnapshot = null;
                 scheduleMetadataLookup();
             }
 
@@ -291,6 +338,7 @@ public class AddVideoActivity extends AppCompatActivity {
             titleInput.setText("");
             channelInput.setText("");
             fetchedChannelAvatarUrl = "";
+            setMetadataLoading(false);
             return;
         }
 
@@ -322,22 +370,34 @@ public class AddVideoActivity extends AppCompatActivity {
 
     private void fetchMetadata(String videoUrl, MetadataCallback callback) {
         final int requestId = metadataRequestId.incrementAndGet();
+        setMetadataLoading(true);
         metadataExecutor.execute(() -> {
             try {
                 Metadata metadata = loadYouTubeMetadata(videoUrl);
 
                 mainHandler.post(() -> {
                     if (requestId != metadataRequestId.get() || isFinishing()) return;
+                    setMetadataLoading(false);
                     callback.onSuccess(metadata.title, metadata.channel, metadata.channelAvatarUrl);
                 });
             } catch (Exception e) {
                 Logger.w("Impossible de récupérer les métadonnées de la vidéo", e);
                 mainHandler.post(() -> {
                     if (requestId != metadataRequestId.get() || isFinishing()) return;
+                    setMetadataLoading(false);
                     callback.onError(getString(R.string.metadata_failed));
                 });
             }
         });
+    }
+
+    private void setMetadataLoading(boolean isLoading) {
+        if (metadataLoadingOverlay != null) {
+            metadataLoadingOverlay.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        }
+        if (metadataLoadingIndicator != null) {
+            metadataLoadingIndicator.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        }
     }
 
     private Metadata loadYouTubeMetadata(String videoUrl) throws Exception {
@@ -357,6 +417,7 @@ public class AddVideoActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (pendingMetadataLookup != null) mainHandler.removeCallbacks(pendingMetadataLookup);
+        setMetadataLoading(false);
         metadataExecutor.shutdownNow();
     }
 
@@ -377,4 +438,3 @@ public class AddVideoActivity extends AppCompatActivity {
         }
     }
 }
-
