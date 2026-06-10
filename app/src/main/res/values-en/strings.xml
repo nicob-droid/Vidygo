@@ -36,8 +36,10 @@
     <string name="sort_dialog_title">Sort videos</string>
     <string name="sort_date_desc">Date added (newest first)</string>
     <string name="sort_date_asc">Date added (oldest first)</string>
-    <string name="sort_alpha_asc">Alphabetical order (A-Z)</string>
-    <string name="sort_alpha_desc">Alphabetical order (Z-A)</string>
+    <string name="sort_alpha_asc">Alphabetical order by title (A-Z)</string>
+    <string name="sort_alpha_desc">Alphabetical order by title (Z-A)</string>
+    <string name="sort_channel_asc">Channel (A-Z)</string>
+    <string name="sort_channel_desc">Channel (Z-A)</string>
     <string name="settings_title">Settings</string>
     <string name="settings_appearance">Theme / appearance</string>
     <string name="settings_theme_mode">Appearance mode</string>

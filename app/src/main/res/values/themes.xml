@@ -16,7 +16,7 @@
         <item name="colorSecondaryVariant">@color/purple_matte_dark</item>
         <item name="colorOnSecondary">@color/white</item>
         <!-- Status bar color - Subtle dark gray for contrast -->
-        <item name="android:statusBarColor">@color/appbar_primary</item>
+        <item name="android:statusBarColor">@color/appbar_primary_dark</item>
         <!-- Customize your theme here. -->
     </style>
 </resources>

@@ -37,8 +37,10 @@
     <string name="sort_dialog_title">Trier les vidéos</string>
     <string name="sort_date_desc">Date d\'ajout (plus récent)</string>
     <string name="sort_date_asc">Date d\'ajout (plus ancien)</string>
-    <string name="sort_alpha_asc">Ordre alphabétique (A-Z)</string>
-    <string name="sort_alpha_desc">Ordre alphabétique (Z-A)</string>
+    <string name="sort_alpha_asc">Ordre alphabétique titre (A-Z)</string>
+    <string name="sort_alpha_desc">Ordre alphabétique titre (Z-A)</string>
+    <string name="sort_channel_asc">Chaîne (A-Z)</string>
+    <string name="sort_channel_desc">Chaîne (Z-A)</string>
     <string name="settings_title">Paramètres</string>
     <string name="settings_appearance">Thème / apparence</string>
     <string name="settings_theme_mode">Mode d\'apparence</string>

@@ -85,7 +85,9 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         DATE_DESC,
         DATE_ASC,
         ALPHA_ASC,
-        ALPHA_DESC
+        ALPHA_DESC,
+        CHANNEL_ASC,
+        CHANNEL_DESC
     }
 
     @Override
@@ -259,6 +261,12 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             case ALPHA_DESC:
                 comparator = (a, b) -> safeTitle(b).compareToIgnoreCase(safeTitle(a));
                 break;
+            case CHANNEL_ASC:
+                comparator = (a, b) -> safeChannel(a).compareToIgnoreCase(safeChannel(b));
+                break;
+            case CHANNEL_DESC:
+                comparator = (a, b) -> safeChannel(b).compareToIgnoreCase(safeChannel(a));
+                break;
             case DATE_DESC:
             default:
                 comparator = (a, b) -> Long.compare(b.getDateAdded(), a.getDateAdded());
@@ -270,6 +278,11 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     private String safeTitle(Video video) {
         String title = video.getTitle();
         return title == null ? "" : title.trim();
+    }
+
+    private String safeChannel(Video video) {
+        String channel = video.getChannel();
+        return channel == null ? "" : channel.trim();
     }
 
     /**
@@ -673,13 +686,17 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
                 SortMode.DATE_DESC,
                 SortMode.DATE_ASC,
                 SortMode.ALPHA_ASC,
-                SortMode.ALPHA_DESC
+                SortMode.ALPHA_DESC,
+                SortMode.CHANNEL_ASC,
+                SortMode.CHANNEL_DESC
         };
         final String[] labels = {
                 getString(R.string.sort_date_desc),
                 getString(R.string.sort_date_asc),
                 getString(R.string.sort_alpha_asc),
-                getString(R.string.sort_alpha_desc)
+                getString(R.string.sort_alpha_desc),
+                getString(R.string.sort_channel_asc),
+                getString(R.string.sort_channel_desc)
         };
 
         int selectedIndex = 0;
@@ -729,6 +746,10 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
                 return R.string.sort_alpha_asc;
             case ALPHA_DESC:
                 return R.string.sort_alpha_desc;
+            case CHANNEL_ASC:
+                return R.string.sort_channel_asc;
+            case CHANNEL_DESC:
+                return R.string.sort_channel_desc;
             case DATE_DESC:
             default:
                 return R.string.sort_date_desc;
