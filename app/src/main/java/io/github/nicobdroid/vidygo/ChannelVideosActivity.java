@@ -82,9 +82,7 @@ public class ChannelVideosActivity extends AppCompatActivity implements VideoAda
             }
 
             if (playlistName != null) {
-                String playlist = video.getPlaylistName();
-                String normalized = playlist == null ? "" : playlist.trim();
-                if (playlistName.trim().equals(normalized)) {
+                if (video.isInPlaylist(playlistName)) {
                     result.add(video);
                 }
                 continue;
@@ -177,7 +175,11 @@ public class ChannelVideosActivity extends AppCompatActivity implements VideoAda
                     if (TextUtils.isEmpty(selected)) {
                         return;
                     }
-                    videoPreferenceManager.updateVideoPlaylist(video.getId(), selected);
+                    if (video.isInPlaylist(selected)) {
+                        Toast.makeText(this, getString(R.string.video_already_in_playlist, selected), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    videoPreferenceManager.addVideoToPlaylist(video.getId(), selected);
                     videoList = filterVideos(videoPreferenceManager.getVideos());
                     videoAdapter.updateVideos(videoList);
                     Toast.makeText(this, getString(R.string.video_added_to_playlist, selected), Toast.LENGTH_SHORT).show();

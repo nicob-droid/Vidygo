@@ -141,17 +141,22 @@ public class ChannelAdapter extends RecyclerView.Adapter<ChannelAdapter.ChannelV
             }
         }
         for (Video video : videos) {
-            String key;
             if (mode == Mode.PLAYLISTS) {
-                String rawPlaylist = video.getPlaylistName();
-                if (TextUtils.isEmpty(rawPlaylist) || rawPlaylist.trim().isEmpty()) {
+                List<String> videoPlaylists = video.getPlaylistNames();
+                if (videoPlaylists.isEmpty()) {
                     continue;
                 }
-                key = rawPlaylist.trim();
+                for (String rawPlaylist : videoPlaylists) {
+                    if (TextUtils.isEmpty(rawPlaylist) || rawPlaylist.trim().isEmpty()) {
+                        continue;
+                    }
+                    String key = rawPlaylist.trim();
+                    grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(video);
+                }
             } else {
-                key = TextUtils.isEmpty(video.getChannel()) ? "Chaîne inconnue" : video.getChannel().trim();
+                String key = TextUtils.isEmpty(video.getChannel()) ? "Chaîne inconnue" : video.getChannel().trim();
+                grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(video);
             }
-            grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(video);
         }
 
         List<ChannelItem> result = new ArrayList<>();

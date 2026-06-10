@@ -2,12 +2,16 @@ package io.github.nicobdroid.vidygo;
 
 import android.content.Intent;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.net.Uri;
 import android.os.Bundle;
 import android.content.SharedPreferences;
 import android.text.TextUtils;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.FrameLayout;
 
@@ -27,6 +31,7 @@ import io.github.nicobdroid.vidygo.adapter.VideoAdapter;
 import io.github.nicobdroid.vidygo.model.Video;
 import io.github.nicobdroid.vidygo.util.Logger;
 import io.github.nicobdroid.vidygo.util.VideoPreferenceManager;
+import com.bumptech.glide.Glide;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
@@ -38,6 +43,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Activité principale de l'application Vidygo.
@@ -49,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     private static final String KEY_ALL_SORT_MODE = "all_sort_mode";
     private static final String STATE_CURRENT_MODE = "state_current_mode";
     private static final String TEST_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111";
+    private static final Pattern SHORTS_PATTERN = Pattern.compile("/shorts/([a-zA-Z0-9_-]{11})");
 
     private RecyclerView videosRecyclerView;
     private VideoAdapter videoAdapter;
@@ -437,7 +446,9 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
 
         String[] actions = {
                 getString(R.string.rename_playlist),
-                getString(R.string.delete_playlist)
+                getString(R.string.delete_playlist),
+                getString(R.string.add_existing_video_to_playlist),
+                getString(R.string.add_new_video_to_playlist)
         };
 
         AlertDialog actionsDialog = new AlertDialog.Builder(this)
@@ -447,12 +458,58 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
                         showRenamePlaylistDialog(playlistName);
                     } else if (which == 1) {
                         showDeletePlaylistDialog(playlistName);
+                    } else if (which == 2) {
+                        showAddExistingVideoToPlaylistDialog(playlistName);
+                    } else if (which == 3) {
+                        openAddNewVideoForPlaylist(playlistName);
                     }
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .create();
         actionsDialog.show();
         styleDialogButtons(actionsDialog);
+    }
+
+    private void showAddExistingVideoToPlaylistDialog(String playlistName) {
+        List<Video> candidates = new ArrayList<>();
+        for (Video video : videoPreferenceManager.getVideos()) {
+            if (!video.isInPlaylist(playlistName)) {
+                candidates.add(video);
+            }
+        }
+        sortVideosForAllMode(candidates);
+
+        if (candidates.isEmpty()) {
+            Toast.makeText(this, R.string.no_video_available_for_playlist, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        View contentView = LayoutInflater.from(this).inflate(R.layout.dialog_playlist_video_picker, null, false);
+        RecyclerView recyclerView = contentView.findViewById(R.id.playlist_video_picker_recycler);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        AlertDialog pickerDialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.add_existing_video_dialog_title, playlistName))
+                .setView(contentView)
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+
+        PlaylistVideoPickerAdapter adapter = new PlaylistVideoPickerAdapter(candidates, video -> {
+            videoPreferenceManager.addVideoToPlaylist(video.getId(), playlistName);
+            refreshStoredVideoList();
+            Toast.makeText(this, getString(R.string.video_added_to_playlist, playlistName), Toast.LENGTH_SHORT).show();
+            pickerDialog.dismiss();
+        });
+        recyclerView.setAdapter(adapter);
+
+        pickerDialog.show();
+        styleDialogButtons(pickerDialog);
+    }
+
+    private void openAddNewVideoForPlaylist(String playlistName) {
+        Intent intent = new Intent(this, AddVideoActivity.class);
+        intent.putExtra(AddVideoActivity.EXTRA_PREFILL_PLAYLIST, playlistName);
+        startActivity(intent);
     }
 
     private void showRenamePlaylistDialog(String oldName) {
@@ -544,7 +601,11 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
                 .setTitle(R.string.add_to_playlist)
                 .setItems(options, (dialog, which) -> {
                     String selected = options[which];
-                    videoPreferenceManager.updateVideoPlaylist(video.getId(), selected);
+                    if (video.isInPlaylist(selected)) {
+                        Toast.makeText(this, getString(R.string.video_already_in_playlist, selected), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    videoPreferenceManager.addVideoToPlaylist(video.getId(), selected);
                     refreshStoredVideoList();
                     Toast.makeText(this, getString(R.string.video_added_to_playlist, selected), Toast.LENGTH_SHORT).show();
                 })
@@ -671,6 +732,124 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             case DATE_DESC:
             default:
                 return R.string.sort_date_desc;
+        }
+    }
+
+    private static class PlaylistVideoPickerAdapter
+            extends RecyclerView.Adapter<PlaylistVideoPickerAdapter.VideoPickViewHolder> {
+
+        interface OnVideoPickListener {
+            void onVideoPicked(Video video);
+        }
+
+        private final List<Video> videos;
+        private final OnVideoPickListener listener;
+
+        PlaylistVideoPickerAdapter(List<Video> videos, OnVideoPickListener listener) {
+            this.videos = videos == null ? new ArrayList<>() : videos;
+            this.listener = listener;
+        }
+
+        @NonNull
+        @Override
+        public VideoPickViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_playlist_video_picker, parent, false);
+            return new VideoPickViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull VideoPickViewHolder holder, int position) {
+            Video video = videos.get(position);
+            holder.bind(video, listener);
+        }
+
+        @Override
+        public int getItemCount() {
+            return videos.size();
+        }
+
+        static class VideoPickViewHolder extends RecyclerView.ViewHolder {
+            private final android.widget.ImageView thumbnail;
+            private final TextView title;
+            private final TextView subtitle;
+
+            VideoPickViewHolder(@NonNull View itemView) {
+                super(itemView);
+                thumbnail = itemView.findViewById(R.id.playlist_video_item_thumbnail);
+                title = itemView.findViewById(R.id.playlist_video_item_title);
+                subtitle = itemView.findViewById(R.id.playlist_video_item_subtitle);
+            }
+
+            void bind(Video video, OnVideoPickListener listener) {
+                String safeTitle = TextUtils.isEmpty(video.getTitle())
+                        ? itemView.getContext().getString(R.string.shared_video_default_title)
+                        : video.getTitle();
+                String safeChannel = TextUtils.isEmpty(video.getChannel())
+                        ? itemView.getContext().getString(R.string.unknown_channel)
+                        : video.getChannel();
+                String thumb = TextUtils.isEmpty(video.getThumbnailUrl())
+                        ? buildYouTubeThumbnailUrl(video.getVideoUrl())
+                        : video.getThumbnailUrl();
+
+                Glide.with(itemView)
+                        .load(thumb)
+                        .placeholder(R.drawable.video_thumbnail_placeholder)
+                        .error(R.drawable.video_thumbnail_placeholder)
+                        .into(thumbnail);
+
+                title.setText(safeTitle);
+                subtitle.setText(safeChannel);
+                itemView.setOnClickListener(v -> {
+                    if (listener != null) {
+                        listener.onVideoPicked(video);
+                    }
+                });
+            }
+
+            private String buildYouTubeThumbnailUrl(String videoUrl) {
+                String videoId = extractYouTubeVideoId(videoUrl);
+                if (TextUtils.isEmpty(videoId)) {
+                    return null;
+                }
+                return String.format(Locale.US, "https://i.ytimg.com/vi/%s/hqdefault.jpg", videoId);
+            }
+
+            private String extractYouTubeVideoId(String videoUrl) {
+                if (TextUtils.isEmpty(videoUrl)) {
+                    return null;
+                }
+                try {
+                    Uri uri = Uri.parse(videoUrl);
+                    String host = uri.getHost();
+                    if (host == null) {
+                        return null;
+                    }
+                    host = host.toLowerCase(Locale.US);
+                    if (host.contains("youtu.be")) {
+                        String id = uri.getLastPathSegment();
+                        return isValidVideoId(id) ? id : null;
+                    }
+                    if (host.contains("youtube.com")) {
+                        String vParam = uri.getQueryParameter("v");
+                        if (isValidVideoId(vParam)) {
+                            return vParam;
+                        }
+                        Matcher shortsMatcher = SHORTS_PATTERN.matcher(uri.getPath() == null ? "" : uri.getPath());
+                        if (shortsMatcher.find()) {
+                            String shortsId = shortsMatcher.group(1);
+                            return isValidVideoId(shortsId) ? shortsId : null;
+                        }
+                    }
+                } catch (Exception ignored) {
+                    return null;
+                }
+                return null;
+            }
+
+            private boolean isValidVideoId(String videoId) {
+                return !TextUtils.isEmpty(videoId) && videoId.length() == 11;
+            }
         }
     }
 }
