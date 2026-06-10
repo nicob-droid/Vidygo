@@ -46,7 +46,7 @@ public class ChannelVideosActivity extends AppCompatActivity implements VideoAda
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            String title = channelName != null ? channelName : (playlistName != null ? playlistName : "Vidéos");
+            String title = channelName != null ? channelName : (playlistName != null ? playlistName : getString(R.string.videos_title));
             getSupportActionBar().setTitle(title);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
@@ -102,7 +102,7 @@ public class ChannelVideosActivity extends AppCompatActivity implements VideoAda
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(video.getVideoUrl())));
         } catch (Exception e) {
-            Toast.makeText(this, "Impossible d'ouvrir la vidéo", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.cannot_open_video, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -157,8 +157,8 @@ public class ChannelVideosActivity extends AppCompatActivity implements VideoAda
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("text/plain");
         shareIntent.putExtra(Intent.EXTRA_TEXT,
-                "Regarde cette vidéo : " + video.getTitle() + "\n" + video.getVideoUrl());
-        startActivity(Intent.createChooser(shareIntent, "Partager la vidéo"));
+                getString(R.string.share_video_text, video.getTitle(), video.getVideoUrl()));
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.share_video)));
     }
 
     @Override

@@ -137,7 +137,7 @@ public class AddVideoActivity extends AppCompatActivity {
         String playlist = getText(playlistInput);
 
         if (url.isEmpty()) {
-            urlInput.setError("Veuillez entrer l'URL de la vidéo");
+            urlInput.setError(getString(R.string.url_required));
             return;
         }
 
@@ -185,7 +185,7 @@ public class AddVideoActivity extends AppCompatActivity {
         if (launchedFromShareIntent) {
             Toast.makeText(this, R.string.video_added_from_share, Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "Vidéo ajoutée : " + title, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.video_added, title), Toast.LENGTH_SHORT).show();
         }
         setResult(RESULT_OK);
 

@@ -338,7 +338,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         try {
             startActivity(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "Impossible d'ouvrir la vidéo", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.cannot_open_video, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -389,8 +389,8 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("text/plain");
         shareIntent.putExtra(Intent.EXTRA_TEXT,
-                "Regarde cette vidéo : " + video.getTitle() + "\n" + video.getVideoUrl());
-        startActivity(Intent.createChooser(shareIntent, "Partager la vidéo"));
+                getString(R.string.share_video_text, video.getTitle(), video.getVideoUrl()));
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.share_video)));
     }
 
     @Override

@@ -82,5 +82,10 @@
     <string name="delete_video_confirm_message">Permanently delete the video "%1$s"?</string>
     <string name="video_deleted">Video deleted</string>
     <string name="confirm_delete">Delete</string>
+    <string name="url_required">Please enter the video URL</string>
+    <string name="video_added">Video added: %1$s</string>
+    <string name="videos_title">Videos</string>
+    <string name="cannot_open_video">Cannot open video</string>
+    <string name="share_video_text">Check out this video: %1$s\n%2$s</string>
 </resources>
 

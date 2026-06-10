@@ -82,4 +82,9 @@
     <string name="delete_video_confirm_message">Supprimer définitivement la vidéo "%1$s" ?</string>
     <string name="video_deleted">Vidéo supprimée</string>
     <string name="confirm_delete">Supprimer</string>
+    <string name="url_required">Veuillez entrer l\'URL de la vidéo</string>
+    <string name="video_added">Vidéo ajoutée : %1$s</string>
+    <string name="videos_title">Vidéos</string>
+    <string name="cannot_open_video">Impossible d\'ouvrir la vidéo</string>
+    <string name="share_video_text">Regarde cette vidéo : %1$s\n%2$s</string>
 </resources>
