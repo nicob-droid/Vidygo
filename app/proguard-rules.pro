@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Preserve file/line info so Play Console and Crashlytics show readable traces after deobfuscation.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
