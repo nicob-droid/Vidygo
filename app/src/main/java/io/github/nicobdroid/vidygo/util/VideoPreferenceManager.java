@@ -43,7 +43,7 @@ public class VideoPreferenceManager {
                 jsonObject.put("id", video.getId());
                 jsonObject.put("title", video.getTitle());
                 jsonObject.put("channel", video.getChannel());
-                jsonObject.put("playlistName", video.getPlaylistName());
+                jsonObject.put("playlistNames", new JSONArray(video.getPlaylistNames()));
                 jsonObject.put("thumbnailUrl", video.getThumbnailUrl());
                 jsonObject.put("videoUrl", video.getVideoUrl());
                 jsonObject.put("channelAvatarUrl", video.getChannelAvatarUrl());
@@ -67,11 +67,27 @@ public class VideoPreferenceManager {
             JSONArray jsonArray = new JSONArray(jsonString);
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+                // Charger les playlists (rétrocompatibilité avec ancien format)
+                List<String> playlistNames = new ArrayList<>();
+                if (jsonObject.has("playlistNames")) {
+                    JSONArray playlistArray = jsonObject.getJSONArray("playlistNames");
+                    for (int j = 0; j < playlistArray.length(); j++) {
+                        playlistNames.add(playlistArray.getString(j));
+                    }
+                } else if (jsonObject.has("playlistName")) {
+                    // Ancienne format avec un seul playlistName
+                    String oldPlaylist = jsonObject.optString("playlistName", "");
+                    if (!oldPlaylist.isEmpty()) {
+                        playlistNames.add(oldPlaylist);
+                    }
+                }
+
                 Video video = new Video(
                         jsonObject.getString("id"),
                         jsonObject.getString("title"),
                         jsonObject.getString("channel"),
-                        jsonObject.optString("playlistName", ""),
+                        playlistNames,
                         jsonObject.getString("thumbnailUrl"),
                         jsonObject.getString("videoUrl"),
                         jsonObject.optString("channelAvatarUrl", "")
@@ -93,8 +109,11 @@ public class VideoPreferenceManager {
         List<Video> videos = getVideos();
         videos.add(0, video); // Ajouter au début
         saveVideos(videos);
-        if (video.getPlaylistName() != null && !video.getPlaylistName().trim().isEmpty()) {
-            savePlaylist(video.getPlaylistName());
+        // Sauvegarder toutes les playlists de la vidéo dans la liste explicite
+        for (String playlistName : video.getPlaylistNames()) {
+            if (playlistName != null && !playlistName.trim().isEmpty()) {
+                savePlaylist(playlistName);
+            }
         }
     }
 
@@ -108,8 +127,10 @@ public class VideoPreferenceManager {
     }
 
     /**
-     * Met à jour la playlist d'une vidéo existante.
+     * Met à jour les playlists d'une vidéo existante (remplace l'ancienne par la nouvelle).
+     * @deprecated Utiliser addVideoToPlaylist/removeVideoFromPlaylist à la place
      */
+    @Deprecated
     public void updateVideoPlaylist(String videoId, String playlistName) {
         List<Video> videos = getVideos();
         for (Video video : videos) {
@@ -122,6 +143,50 @@ public class VideoPreferenceManager {
         if (playlistName != null && !playlistName.trim().isEmpty()) {
             savePlaylist(playlistName);
         }
+    }
+
+    /**
+     * Retourne les playlists explicites (créées manuellement), triées.
+     */
+    public List<String> getExplicitPlaylistNames() {
+        List<String> result = getExplicitPlaylists();
+        Collections.sort(result, String::compareToIgnoreCase);
+        return result;
+    }
+
+    /**
+     * Ajoute une vidéo à une playlist (sans supprimer ses autres playlists).
+     */
+    public void addVideoToPlaylist(String videoId, String playlistName) {
+        if (playlistName == null || playlistName.trim().isEmpty()) {
+            return;
+        }
+        List<Video> videos = getVideos();
+        for (Video video : videos) {
+            if (video.getId().equals(videoId)) {
+                video.addToPlaylist(playlistName);
+                break;
+            }
+        }
+        saveVideos(videos);
+        savePlaylist(playlistName);
+    }
+
+    /**
+     * Retire une vidéo d'une playlist (garde ses autres playlists).
+     */
+    public void removeVideoFromPlaylist(String videoId, String playlistName) {
+        if (playlistName == null) {
+            return;
+        }
+        List<Video> videos = getVideos();
+        for (Video video : videos) {
+            if (video.getId().equals(videoId)) {
+                video.removeFromPlaylist(playlistName);
+                break;
+            }
+        }
+        saveVideos(videos);
     }
 
     /**
@@ -154,21 +219,13 @@ public class VideoPreferenceManager {
             }
         }
         for (Video video : getVideos()) {
-            String playlist = video.getPlaylistName();
-            if (playlist != null && !playlist.trim().isEmpty()) {
-                unique.add(playlist.trim());
+            for (String playlistName : video.getPlaylistNames()) {
+                if (playlistName != null && !playlistName.trim().isEmpty()) {
+                    unique.add(playlistName.trim());
+                }
             }
         }
         List<String> result = new ArrayList<>(unique);
-        Collections.sort(result, String::compareToIgnoreCase);
-        return result;
-    }
-
-    /**
-     * Retourne les playlists explicites (créées manuellement), triées.
-     */
-    public List<String> getExplicitPlaylistNames() {
-        List<String> result = getExplicitPlaylists();
         Collections.sort(result, String::compareToIgnoreCase);
         return result;
     }
@@ -197,9 +254,13 @@ public class VideoPreferenceManager {
 
         List<Video> videos = getVideos();
         for (Video video : videos) {
-            if (isSamePlaylist(oldNorm, video.getPlaylistName())) {
-                video.setPlaylistName(newNorm);
+            List<String> playlists = video.getPlaylistNames();
+            for (int i = 0; i < playlists.size(); i++) {
+                if (oldNorm.equalsIgnoreCase(playlists.get(i))) {
+                    playlists.set(i, newNorm);
+                }
             }
+            video.setPlaylistNames(playlists);
         }
         saveVideos(videos);
         saveExplicitPlaylists(explicit);
@@ -220,9 +281,7 @@ public class VideoPreferenceManager {
 
         List<Video> videos = getVideos();
         for (Video video : videos) {
-            if (isSamePlaylist(normalized, video.getPlaylistName())) {
-                video.setPlaylistName("");
-            }
+            video.removeFromPlaylist(normalized);
         }
         saveVideos(videos);
     }
@@ -241,7 +300,7 @@ public class VideoPreferenceManager {
         saveExplicitPlaylists(explicit);
 
         List<Video> videos = getVideos();
-        videos.removeIf(video -> isSamePlaylist(normalized, video.getPlaylistName()));
+        videos.removeIf(video -> video.isInPlaylist(normalized));
         saveVideos(videos);
     }
 
@@ -306,10 +365,6 @@ public class VideoPreferenceManager {
 
     private String normalizePlaylistName(String value) {
         return value == null ? "" : value.trim();
-    }
-
-    private boolean isSamePlaylist(String a, String b) {
-        return normalizePlaylistName(a).equalsIgnoreCase(normalizePlaylistName(b));
     }
 }
 

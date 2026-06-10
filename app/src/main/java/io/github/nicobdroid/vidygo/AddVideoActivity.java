@@ -22,6 +22,7 @@ import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textview.MaterialTextView;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -188,6 +189,11 @@ public class AddVideoActivity extends AppCompatActivity {
             return;
         }
 
+        if (isVideoAlreadySaved(url)) {
+            Toast.makeText(this, R.string.video_already_exists, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (TextUtils.isEmpty(title) || TextUtils.isEmpty(channel)) {
             metadataStatus.setText(R.string.metadata_loading);
             fetchMetadata(url, new MetadataCallback() {
@@ -212,6 +218,16 @@ public class AddVideoActivity extends AppCompatActivity {
         }
 
         persistVideo(url, title, channel, playlist, fetchedChannelAvatarUrl);
+    }
+
+    private boolean isVideoAlreadySaved(String url) {
+        List<Video> savedVideos = videoPreferenceManager.getVideos();
+        for (Video video : savedVideos) {
+            if (video.getVideoUrl().equals(url)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String getText(TextInputEditText input) {
@@ -262,6 +278,12 @@ public class AddVideoActivity extends AppCompatActivity {
         String youtubeUrl = extractFirstYoutubeUrl(sharedText);
         if (TextUtils.isEmpty(youtubeUrl)) {
             Toast.makeText(this, R.string.share_no_youtube_link, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (isVideoAlreadySaved(youtubeUrl)) {
+            Toast.makeText(this, R.string.video_already_exists, Toast.LENGTH_SHORT).show();
+            finish();
             return;
         }
 

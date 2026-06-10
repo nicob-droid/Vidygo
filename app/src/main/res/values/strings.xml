@@ -87,4 +87,5 @@
     <string name="videos_title">Vidéos</string>
     <string name="cannot_open_video">Impossible d\'ouvrir la vidéo</string>
     <string name="share_video_text">Regarde cette vidéo : %1$s\n%2$s</string>
+    <string name="video_already_exists">Cette vidéo est déjà dans votre collection</string>
 </resources>
