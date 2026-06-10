@@ -18,7 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/appbar_primary"
-            app:title="Ajouter une vidéo"
+            app:title="@string/add_video"
             app:titleTextColor="@color/appbar_text"
             app:navigationIcon="?attr/homeAsUpIndicator" />
 
@@ -103,14 +103,6 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Description -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/add_video_description"
-                android:textSize="12sp"
-                android:textColor="?attr/colorSecondary"
-                android:layout_marginTop="20dp" />
-
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/metadata_status"
                 android:layout_width="match_parent"
@@ -136,7 +128,9 @@
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/cancel" />
+            android:text="@string/cancel"
+            android:textColor="@color/appbar_text"
+            app:strokeColor="@color/appbar_text" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_save"

@@ -7,6 +7,10 @@
     <string name="empty_state_icon">Icône d\'état vide</string>
     <string name="empty_state_title">Aucune vidéo sauvegardée</string>
     <string name="empty_state_description">Commencez à ajouter vos vidéos YouTube préférées en cliquant sur le bouton +</string>
+    <string name="empty_state_playlists_title">Aucune playlist créée</string>
+    <string name="empty_state_playlists_description">Créez votre première playlist en cliquant sur le bouton +</string>
+    <string name="empty_state_channels_title">Aucune chaîne enregistrée</string>
+    <string name="empty_state_channels_description">Ajoutez des vidéos avec un nom de chaîne pour les voir apparaître ici</string>
     <string name="add_video_title">Ajouter une nouvelle vidéo YouTube</string>
     <string name="video_url_hint">Lien YouTube (https://youtube.com/watch?v=…)</string>
     <string name="video_title_hint">Titre de la vidéo</string>

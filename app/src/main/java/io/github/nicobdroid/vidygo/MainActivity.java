@@ -58,6 +58,8 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     private RecyclerView.Adapter<?> currentAdapter;
     private List<Video> videoList;
     private LinearLayout emptyState;
+    private android.widget.TextView emptyStateTitle;
+    private android.widget.TextView emptyStateDescription;
     private FloatingActionButton fabAddVideo;
     private FloatingActionButton fabAddPlaylist;
     private FrameLayout adContainerHome;
@@ -112,6 +114,8 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     private void initializeViews() {
         videosRecyclerView = findViewById(R.id.videos_recycler_view);
         emptyState = findViewById(R.id.empty_state);
+        emptyStateTitle = findViewById(R.id.empty_state_title);
+        emptyStateDescription = findViewById(R.id.empty_state_description);
         fabAddVideo = findViewById(R.id.fab_add_video);
         fabAddPlaylist = findViewById(R.id.fab_add_playlist);
         adContainerHome = findViewById(R.id.ad_container_home);
@@ -306,6 +310,16 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
                 ? videoList.isEmpty()
                 : (currentAdapter == null || currentAdapter.getItemCount() == 0);
         if (showEmpty) {
+            if ("playlists".equals(currentMode)) {
+                emptyStateTitle.setText(R.string.empty_state_playlists_title);
+                emptyStateDescription.setText(R.string.empty_state_playlists_description);
+            } else if ("channels".equals(currentMode)) {
+                emptyStateTitle.setText(R.string.empty_state_channels_title);
+                emptyStateDescription.setText(R.string.empty_state_channels_description);
+            } else {
+                emptyStateTitle.setText(R.string.empty_state_title);
+                emptyStateDescription.setText(R.string.empty_state_description);
+            }
             emptyState.setVisibility(android.view.View.VISIBLE);
             videosRecyclerView.setVisibility(android.view.View.GONE);
         } else {
