@@ -12,9 +12,9 @@
         <item name="colorPrimaryVariant">@color/appbar_primary</item>
         <item name="colorOnPrimary">@color/appbar_text</item>
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_200</item>
-        <item name="colorOnSecondary">@color/black</item>
+        <item name="colorSecondary">@color/purple_matte_light</item>
+        <item name="colorSecondaryVariant">@color/purple_matte</item>
+        <item name="colorOnSecondary">@color/white</item>
         <!-- Status bar color - Dark for consistency -->
         <item name="android:statusBarColor">@color/appbar_primary</item>
         <!-- Customize your theme here. -->

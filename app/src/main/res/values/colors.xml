@@ -10,8 +10,12 @@
     <color name="gray_light">#FFF5F5F5</color>
     <color name="gray_dark">#FF616161</color>
     <color name="youtube_red">#FFFF0000</color>
-	<color name="ic_launcher_background">#5A35FF</color>
+    <color name="ic_launcher_background">#5A35FF</color>
     <!-- Action Bar colors - Modern minimalist design -->
     <color name="appbar_primary">#FFFAFAFA</color>
     <color name="appbar_text">#FF1F1F1F</color>
+    <!-- Secondary - Matte purple -->
+    <color name="purple_matte">#FF7E57C2</color>
+    <color name="purple_matte_dark">#FF512DA8</color>
+    <color name="purple_matte_light">#FF9575CD</color>
 </resources>
