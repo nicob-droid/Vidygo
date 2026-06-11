@@ -16,11 +16,16 @@ import android.widget.Toast;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
+import androidx.activity.EdgeToEdge;
+import androidx.activity.SystemBarStyle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
 import androidx.core.splashscreen.SplashScreen;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -94,7 +99,13 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     protected void onCreate(Bundle savedInstanceState) {
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(
+                this,
+                SystemBarStyle.dark(ContextCompat.getColor(this, R.color.gray_dark)),
+                SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+        );
         setContentView(R.layout.activity_main);
+        applyEdgeToEdgeInsets();
         videoPreferenceManager = new VideoPreferenceManager(this);
         currentSortMode = loadSortMode();
         if (savedInstanceState != null) {
@@ -135,6 +146,30 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         chipPlaylists = findViewById(R.id.chip_playlists);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+    }
+
+    private void applyEdgeToEdgeInsets() {
+        ViewGroup content = findViewById(android.R.id.content);
+        if (content == null || content.getChildCount() == 0) {
+            return;
+        }
+        View root = content.getChildAt(0);
+        final int initialLeft = root.getPaddingLeft();
+        final int initialTop = root.getPaddingTop();
+        final int initialRight = root.getPaddingRight();
+        final int initialBottom = root.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            view.setPadding(
+                    initialLeft + bars.left,
+                    initialTop + bars.top,
+                    initialRight + bars.right,
+                    initialBottom + bars.bottom
+            );
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(root);
     }
 
     private void setupAdBanner() {

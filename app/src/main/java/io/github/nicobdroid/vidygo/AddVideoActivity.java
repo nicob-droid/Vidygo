@@ -8,9 +8,16 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
+import androidx.activity.SystemBarStyle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import io.github.nicobdroid.vidygo.model.Video;
 import io.github.nicobdroid.vidygo.util.Logger;
@@ -69,7 +76,13 @@ public class AddVideoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(
+                this,
+                SystemBarStyle.dark(ContextCompat.getColor(this, R.color.gray_dark)),
+                SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+        );
         setContentView(R.layout.activity_add_video);
+        applyEdgeToEdgeInsets();
 
         Logger.d("AddVideoActivity créée");
         videoPreferenceManager = new VideoPreferenceManager(this);
@@ -119,6 +132,30 @@ public class AddVideoActivity extends AppCompatActivity {
         if (!TextUtils.isEmpty(prefill) && playlistInput != null) {
             playlistInput.setText(prefill.trim());
         }
+    }
+
+    private void applyEdgeToEdgeInsets() {
+        ViewGroup content = findViewById(android.R.id.content);
+        if (content == null || content.getChildCount() == 0) {
+            return;
+        }
+        View root = content.getChildAt(0);
+        final int initialLeft = root.getPaddingLeft();
+        final int initialTop = root.getPaddingTop();
+        final int initialRight = root.getPaddingRight();
+        final int initialBottom = root.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            view.setPadding(
+                    initialLeft + bars.left,
+                    initialTop + bars.top,
+                    initialRight + bars.right,
+                    initialBottom + bars.bottom
+            );
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(root);
     }
 
     /**
