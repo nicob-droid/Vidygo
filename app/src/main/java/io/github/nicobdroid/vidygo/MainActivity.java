@@ -177,24 +177,32 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             return;
         }
 
-        String adUnitId = BuildConfig.ADMOB_HOME_BANNER_UNIT_ID;
-        if (TextUtils.isEmpty(adUnitId)) {
-            adUnitId = TEST_BANNER_AD_UNIT_ID;
+        try {
+            String adUnitId = BuildConfig.ADMOB_HOME_BANNER_UNIT_ID;
+            if (TextUtils.isEmpty(adUnitId)) {
+                adUnitId = TEST_BANNER_AD_UNIT_ID;
+            }
+
+            adViewHome = new AdView(this);
+            adViewHome.setAdSize(AdSize.BANNER);
+            adViewHome.setAdUnitId(adUnitId);
+            FrameLayout.LayoutParams adLayoutParams = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    Gravity.CENTER_HORIZONTAL
+            );
+            adViewHome.setLayoutParams(adLayoutParams);
+            adContainerHome.removeAllViews();
+            adContainerHome.addView(adViewHome);
+
+            adViewHome.loadAd(new AdRequest.Builder().build());
+            adContainerHome.setVisibility(View.VISIBLE);
+        } catch (Throwable t) {
+            Logger.e("Impossible d'initialiser la banniere AdMob sur l'ecran principal", t);
+            adViewHome = null;
+            adContainerHome.removeAllViews();
+            adContainerHome.setVisibility(View.GONE);
         }
-
-        adViewHome = new AdView(this);
-        adViewHome.setAdSize(AdSize.BANNER);
-        adViewHome.setAdUnitId(adUnitId);
-        FrameLayout.LayoutParams adLayoutParams = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER_HORIZONTAL
-        );
-        adViewHome.setLayoutParams(adLayoutParams);
-        adContainerHome.removeAllViews();
-        adContainerHome.addView(adViewHome);
-
-        adViewHome.loadAd(new AdRequest.Builder().build());
     }
 
     private void setupFilters() {
