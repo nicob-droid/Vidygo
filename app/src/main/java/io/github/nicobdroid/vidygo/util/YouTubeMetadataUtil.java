@@ -254,7 +254,7 @@ public class YouTubeMetadataUtil {
                 .replace("\\u003d", "=");
     }
 
-    static String extractVideoId(String url) {
+    public static String extractVideoId(String url) {
         if (TextUtils.isEmpty(url)) return "";
         try {
             Uri uri = Uri.parse(url.trim());

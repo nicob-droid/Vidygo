@@ -103,10 +103,28 @@ public class VideoPreferenceManager {
     }
 
     /**
-     * Sauvegarde une vidéo unique
+     * Sauvegarde une vidéo unique.
+     * Refuse silencieusement si une vidéo avec le même identifiant YouTube est déjà présente.
+     * @return true si la vidéo a été sauvegardée, false si elle était déjà présente.
      */
-    public void saveVideo(Video video) {
+    public boolean saveVideo(Video video) {
         List<Video> videos = getVideos();
+        // Protection anti-doublon au niveau de la persistance (comparaison par ID YouTube)
+        String incomingId = YouTubeMetadataUtil.extractVideoId(video.getVideoUrl());
+        for (Video existing : videos) {
+            if (!android.text.TextUtils.isEmpty(incomingId)) {
+                String existingId = YouTubeMetadataUtil.extractVideoId(existing.getVideoUrl());
+                if (incomingId.equals(existingId)) {
+                    Logger.w("Doublon ignoré (ID YouTube déjà présent) : " + incomingId);
+                    return false;
+                }
+            } else {
+                if (existing.getVideoUrl().equals(video.getVideoUrl())) {
+                    Logger.w("Doublon ignoré (URL identique) : " + video.getVideoUrl());
+                    return false;
+                }
+            }
+        }
         videos.add(0, video); // Ajouter au début
         saveVideos(videos);
         // Sauvegarder toutes les playlists de la vidéo dans la liste explicite
@@ -115,6 +133,7 @@ public class VideoPreferenceManager {
                 savePlaylist(playlistName);
             }
         }
+        return true;
     }
 
     /**

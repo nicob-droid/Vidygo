@@ -257,11 +257,26 @@ public class AddVideoActivity extends AppCompatActivity {
         persistVideo(url, title, channel, playlist, fetchedChannelAvatarUrl);
     }
 
+    /**
+     * Vérifie si une vidéo est déjà sauvegardée en comparant par identifiant YouTube.
+     * Cela couvre toutes les variantes d'URL (youtu.be, youtube.com, paramètres si=, t=, etc.).
+     * Si l'ID ne peut pas être extrait, on repasse sur la comparaison d'URL exacte.
+     */
     private boolean isVideoAlreadySaved(String url) {
+        String incomingVideoId = YouTubeMetadataUtil.extractVideoId(url);
         List<Video> savedVideos = videoPreferenceManager.getVideos();
         for (Video video : savedVideos) {
-            if (video.getVideoUrl().equals(url)) {
-                return true;
+            if (!TextUtils.isEmpty(incomingVideoId)) {
+                // Comparaison robuste par identifiant YouTube (indépendante du format d'URL)
+                String savedVideoId = YouTubeMetadataUtil.extractVideoId(video.getVideoUrl());
+                if (incomingVideoId.equals(savedVideoId)) {
+                    return true;
+                }
+            } else {
+                // Fallback : comparaison exacte si l'ID n'a pas pu être extrait
+                if (video.getVideoUrl().equals(url)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -281,7 +296,18 @@ public class AddVideoActivity extends AppCompatActivity {
         Video newVideo = new Video(videoId, title, channel, playlist, "", url, channelAvatarUrl);
 
         Logger.d("Vidéo créée : " + title + " / " + channel);
-        videoPreferenceManager.saveVideo(newVideo);
+        boolean saved = videoPreferenceManager.saveVideo(newVideo);
+        if (!saved) {
+            // Doublon détecté au niveau de la persistance (protection ultime)
+            Toast.makeText(this, R.string.video_already_exists, Toast.LENGTH_SHORT).show();
+            if (openMainAfterSave) {
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            }
+            finish();
+            return;
+        }
         if (launchedFromShareIntent) {
             Toast.makeText(this, R.string.video_added_from_share, Toast.LENGTH_SHORT).show();
         } else {
@@ -397,6 +423,13 @@ public class AddVideoActivity extends AppCompatActivity {
             titleInput.setText("");
             channelInput.setText("");
             fetchedChannelAvatarUrl = "";
+            setMetadataLoading(false);
+            return;
+        }
+
+        // Vérification immédiate de doublon (lecture SharedPreferences, très rapide)
+        if (isVideoAlreadySaved(url)) {
+            metadataStatus.setText(R.string.video_already_exists);
             setMetadataLoading(false);
             return;
         }
