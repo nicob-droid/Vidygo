@@ -40,6 +40,8 @@ import com.bumptech.glide.Glide;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.LoadAdError;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -178,14 +180,28 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
         }
 
         try {
-            String adUnitId = BuildConfig.ADMOB_HOME_BANNER_UNIT_ID;
-            if (TextUtils.isEmpty(adUnitId)) {
-                adUnitId = TEST_BANNER_AD_UNIT_ID;
-            }
+            String adUnitId = resolveBannerAdUnitId();
 
             adViewHome = new AdView(this);
             adViewHome.setAdSize(AdSize.BANNER);
             adViewHome.setAdUnitId(adUnitId);
+            adViewHome.setAdListener(new AdListener() {
+                @Override
+                public void onAdLoaded() {
+                    Logger.i("Banniere AdMob chargee avec succes");
+                    adContainerHome.setVisibility(View.VISIBLE);
+                }
+
+                @Override
+                public void onAdFailedToLoad(@NonNull LoadAdError adError) {
+                    Logger.w(
+                            "Echec chargement banniere AdMob code=" + adError.getCode()
+                                    + " domaine=" + adError.getDomain()
+                                    + " message=" + adError.getMessage()
+                    );
+                    adContainerHome.setVisibility(View.GONE);
+                }
+            });
             FrameLayout.LayoutParams adLayoutParams = new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT,
                     FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -196,13 +212,39 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
             adContainerHome.addView(adViewHome);
 
             adViewHome.loadAd(new AdRequest.Builder().build());
-            adContainerHome.setVisibility(View.VISIBLE);
+            adContainerHome.setVisibility(View.GONE);
         } catch (Throwable t) {
             Logger.e("Impossible d'initialiser la banniere AdMob sur l'ecran principal", t);
             adViewHome = null;
             adContainerHome.removeAllViews();
             adContainerHome.setVisibility(View.GONE);
         }
+    }
+
+    private String resolveBannerAdUnitId() {
+        // En debug, forcer une pub de test evite les erreurs "No fill" sur les nouveaux blocs.
+        if (BuildConfig.DEBUG) {
+            Logger.i("Build debug detecte: utilisation de l'unite de test AdMob");
+            return TEST_BANNER_AD_UNIT_ID;
+        }
+
+        String configured = sanitizeAdUnitId(BuildConfig.ADMOB_HOME_BANNER_UNIT_ID);
+        if (TextUtils.isEmpty(configured)) {
+            Logger.w("Aucune unite AdMob configuree: fallback sur l'unite de test");
+            return TEST_BANNER_AD_UNIT_ID;
+        }
+        return configured;
+    }
+
+    private String sanitizeAdUnitId(String rawAdUnitId) {
+        if (rawAdUnitId == null) {
+            return "";
+        }
+        String cleaned = rawAdUnitId.trim();
+        if (cleaned.startsWith("\"") && cleaned.endsWith("\"") && cleaned.length() >= 2) {
+            cleaned = cleaned.substring(1, cleaned.length() - 1).trim();
+        }
+        return cleaned;
     }
 
     private void setupFilters() {
