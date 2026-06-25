@@ -14,7 +14,12 @@ public class VidygoApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        ThemePreferenceManager.applySavedTheme(this);
+        try {
+            ThemePreferenceManager.applySavedTheme(this);
+        } catch (Throwable t) {
+            // Evite un crash de lancement si la preference de theme est invalide/corrompue.
+            Logger.e("Application du theme impossible au demarrage", t);
+        }
         try {
             MobileAds.initialize(this, initializationStatus -> {
                 // L'initialisation est asynchrone; le chargement des bannières peut suivre.

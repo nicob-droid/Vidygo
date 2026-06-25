@@ -101,11 +101,7 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
     protected void onCreate(Bundle savedInstanceState) {
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(
-                this,
-                SystemBarStyle.dark(ContextCompat.getColor(this, R.color.gray_dark)),
-                SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
-        );
+        setupEdgeToEdgeSafely();
         setContentView(R.layout.activity_main);
         applyEdgeToEdgeInsets();
         videoPreferenceManager = new VideoPreferenceManager(this);
@@ -130,6 +126,19 @@ public class MainActivity extends AppCompatActivity implements VideoAdapter.OnVi
 
         // Afficher l'état vide si la liste est vide
         updateEmptyState();
+    }
+
+    private void setupEdgeToEdgeSafely() {
+        try {
+            EdgeToEdge.enable(
+                    this,
+                    SystemBarStyle.dark(ContextCompat.getColor(this, R.color.gray_dark)),
+                    SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+            );
+        } catch (Throwable t) {
+            // Fallback silencieux: l'echec Edge-to-Edge ne doit pas bloquer l'ouverture de l'app.
+            Logger.e("Activation EdgeToEdge impossible", t);
+        }
     }
 
     /**

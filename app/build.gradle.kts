@@ -17,13 +17,13 @@ val admobAppId = (
     localProperties.getProperty("admob.app.id")
         ?: providers.gradleProperty("admob.app.id").orNull
         ?: "ca-app-pub-3940256099942544~3347511713"
-).replace("\\", "\\\\").replace("\"", "\\\"")
+)
 
 val admobHomeBannerUnitId = (
     localProperties.getProperty("admob.banner.home.unit.id")
         ?: providers.gradleProperty("admob.banner.home.unit.id").orNull
         ?: "ca-app-pub-3940256099942544/6300978111"
-).replace("\\", "\\\\").replace("\"", "\\\"")
+)
 
 val uploadStoreFile = localProperties.getProperty("upload.store.file")
     ?: providers.gradleProperty("upload.store.file").orNull
